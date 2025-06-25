@@ -1,0 +1,73 @@
+{% extends 'basetemp.html' %}
+{% block title %}Print QR Cards | Meal Tracker{% endblock %}
+
+{% block extra_css %}
+<style>
+  .card-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: flex-start;
+    margin-top: 20px;
+  }
+
+  .student-card {
+    width: 180px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    text-align: center;
+    background: #fff;
+  }
+
+  .student-card img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    margin-bottom: 5px;
+  }
+
+  @media print {
+    button, .btn {
+      display: none !important;
+    }
+
+    .student-card {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    body {
+      background: white;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>🧾 QR Cards for Students</h3>
+  <button onclick="window.print()" class="btn btn-primary">🖨️ Print</button>
+</div>
+
+<div class="card-wrapper">
+  {% for student in students %}
+    <div class="student-card">
+      {% if student.photo %}
+        <img src="{{ student.photo.url }}" alt="Photo" class="img-thumbnail"><br>
+      {% else %}
+        <div class="text-muted small mb-1">No Photo</div>
+      {% endif %}
+
+      {% if student.qr_code_image %}
+        <img src="{{ student.qr_code_image.url }}" alt="QR Code"><br>
+      {% else %}
+        <div class="text-muted small">No QR</div>
+      {% endif %}
+
+      <strong>{{ student.name }}</strong><br>
+      <small class="text-muted">{{ student.class_name }}</small>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

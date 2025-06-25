@@ -1,0 +1,56 @@
+{% extends 'basetemp.html' %}
+
+{% block content %}
+  <h3 class="mb-3">🍽️ Meal Attendance Records</h3>
+
+  <!-- ✅ Filter and Search Form -->
+  <form method="get" class="mb-3 d-flex flex-wrap align-items-center gap-2">
+    <div>
+      <label for="class" class="me-2">Filter by Class:</label>
+      <select name="class" id="class" class="form-select w-auto d-inline-block">
+        <option value="">All Classes</option>
+        {% for class_name in classes %}
+          <option value="{{ class_name }}" {% if class_name == selected_class %}selected{% endif %}>
+            {{ class_name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <input type="text" name="search" placeholder="Search student..." value="{{ search_query }}" class="form-control w-auto" />
+    </div>
+
+    <div>
+      <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+    </div>
+  </form>
+
+  <!-- ✅ Table of Records -->
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Class</th>
+        <th>Meal</th>
+        <th>Date</th>
+        <th>Time</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in records %}
+        <tr>
+          <td>{{ record.student.name }}</td>
+          <td>{{ record.student.class_name }}</td>
+          <td>{{ record.meal_type|title }}</td>
+          <td>{{ record.date }}</td>
+          <td>{{ record.timestamp|time:"H:i:s" }}</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="5" class="text-center">No records found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

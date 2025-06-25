@@ -1,0 +1,114 @@
+{% extends 'basetemp.html' %}
+
+{% block title %}Scan QR - Meal Tracker{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="text-center mb-4"><i class="bi bi-qr-code-scan"></i> Scan Student QR</h2>
+
+  <!-- ✅ Meal Type Selector -->
+  <div class="text-center mb-3">
+    <label for="meal-type" class="form-label fw-semibold">Select Meal:</label>
+    <select id="meal-type" class="form-select w-auto d-inline-block">
+      <option value="breakfast">Breakfast</option>
+      <option value="lunch">Lunch</option>
+      <option value="dinner">Dinner</option>
+      <option value="night_snack">Night Snack</option>
+    </select>
+  </div>
+
+  <!-- ✅ QR Code Scanner -->
+  <div id="reader"></div>
+  <p id="live-output" class="text-center text-success fw-bold mt-2">Waiting for scan...</p>
+
+  <!-- ✅ Student Info -->
+  <div id="result-box" class="text-center mt-4">
+    <h4 id="student-name" class="mb-1"></h4>
+    <p id="student-class" class="text-muted"></p>
+    <img id="student-photo" src="" alt="" class="img-fluid"/>
+  </div>
+
+  <!-- ✅ Status Message -->
+  <div id="status-message" class="text-center mt-3 text-primary fw-bold"></div>
+
+  <!-- ✅ Rescan Button -->
+  <div class="text-center mt-4">
+    <button id="rescan-btn" onclick="restartScanner()" class="btn btn-outline-primary">
+      <i class="bi bi-arrow-repeat"></i> Scan Another Student
+    </button>
+  </div>
+</div>
+
+<!-- ✅ QR Scanner Script -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script>
+  let scanner = new Html5Qrcode("reader");
+
+  function showStudentInfo(qrCode) {
+    fetch(`/api/student/${qrCode}`)
+      .then(response => {
+        if (!response.ok) throw new Error('Student not found');
+        return response.json();
+      })
+      .then(student => {
+        document.getElementById('student-name').innerText = student.name;
+        document.getElementById('student-class').innerText = student.class_name;
+        document.getElementById('student-photo').src = student.photo_url;
+        markStudentAsFed(qrCode);
+      })
+      .catch(error => {
+        const msgBox = document.getElementById('status-message');
+        msgBox.classList.remove("text-primary", "text-success");
+        msgBox.classList.add("text-danger");
+        msgBox.innerText = "❌ Student not found!";
+      });
+  }
+
+  function markStudentAsFed(qrCode) {
+    const mealType = document.getElementById('meal-type').value;
+    fetch(`/api/mark-fed/${qrCode}/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ meal_type: mealType })
+    })
+    .then(response => response.json())
+    .then(result => {
+      const msgBox = document.getElementById('status-message');
+      msgBox.classList.remove("text-danger", "text-success", "text-primary");
+      if (result.status === 'already_fed') {
+        msgBox.classList.add("text-warning");
+        msgBox.innerText = `⚠️ Already fed for ${mealType}`;
+      } else if (result.status === 'success') {
+        msgBox.classList.add("text-success");
+        msgBox.innerText = `✅ ${mealType.charAt(0).toUpperCase() + mealType.slice(1)} recorded`;
+      } else {
+        msgBox.classList.add("text-danger");
+        msgBox.innerText = "❌ Error: " + result.message;
+      }
+    });
+  }
+
+  function startScanner() {
+    scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      qrCodeMessage => {
+        document.getElementById('live-output').innerText = "Scanned: " + qrCodeMessage;
+        scanner.stop();
+        showStudentInfo(qrCodeMessage);
+      }
+    );
+  }
+
+  function restartScanner() {
+    document.getElementById('student-name').innerText = "";
+    document.getElementById('student-class').innerText = "";
+    document.getElementById('student-photo').src = "";
+    document.getElementById('status-message').innerText = "";
+    document.getElementById('live-output').innerText = "Waiting for scan...";
+    startScanner();
+  }
+
+  startScanner();
+</script>
+{% endblock %}
