@@ -4,7 +4,7 @@ from django.http import JsonResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 import json
-
+from django.contrib.admin.views.decorators import staff_member_required
 from .models import Student, FeedingRecord
 
 # ✅ GET student info from QR
@@ -13,6 +13,7 @@ def scan_page(request):
     return render(request, 'students/scan_qr.html')
 
 # ✅ Print all QR cards
+@staff_member_required
 @login_required
 def print_qr_cards(request):
     students = Student.objects.all().order_by('class_name', 'name')
