@@ -28,7 +28,7 @@
   }
 
   @media print {
-    button, .btn {
+    button, .btn, form {
       display: none !important;
     }
 
@@ -50,6 +50,25 @@
   <button onclick="window.print()" class="btn btn-primary">🖨️ Print</button>
 </div>
 
+<!-- 🔍 Search and Filter Form -->
+<form method="get" class="row g-2 mb-4">
+  <div class="col-md-5">
+    <input type="text" name="q" class="form-control" placeholder="Search by name..." value="{{ request.GET.q }}">
+  </div>
+  <div class="col-md-5">
+    <select name="student_id" class="form-select">
+      <option value="">-- Select a student --</option>
+      {% for s in all_students %}
+        <option value="{{ s.id }}" {% if request.GET.student_id == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <button type="submit" class="btn btn-success w-100">🔍 Filter</button>
+  </div>
+</form>
+
+<!-- 🧾 QR Cards Display -->
 <div class="card-wrapper">
   {% for student in students %}
     <div class="student-card">

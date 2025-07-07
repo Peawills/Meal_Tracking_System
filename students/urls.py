@@ -11,6 +11,8 @@ urlpatterns = [
     path('api/student/<str:qr_code>/', views.get_student_by_qr, name='get_student_by_qr'),
     path('api/mark-fed/<str:qr_code>/', views.mark_student_as_fed, name='mark_student_as_fed'),
     path('records/', views.feeding_records, name='feeding_records'),
+    path('register-student/', views.register_student, name='register_student'),
+
 
 
     # 👇 Remove this duplicate login path

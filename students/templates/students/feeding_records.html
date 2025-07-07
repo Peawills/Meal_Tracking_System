@@ -1,4 +1,5 @@
 {% extends 'basetemp.html' %}
+{% block title %}Feeding Record{% endblock %}
 
 {% block content %}
   <h3 class="mb-3">🍽️ Meal Attendance Records</h3>
@@ -44,7 +45,8 @@
           <td>{{ record.student.class_name }}</td>
           <td>{{ record.meal_type|title }}</td>
           <td>{{ record.date }}</td>
-          <td>{{ record.timestamp|time:"H:i:s" }}</td>
+          <td>{{ record.time|time:"H:i:s" }}</td>
+
         </tr>
       {% empty %}
         <tr>

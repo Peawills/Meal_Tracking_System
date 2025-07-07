@@ -28,9 +28,18 @@
           <li class="nav-item">
             <a class="nav-link {% if request.path == '/scan/' %}active{% endif %}" href="{% url 'scan_qr' %}">Scan</a>
           </li>
+          {% if request.user.is_staff %}
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'register_student' %}">Register Student</a>
+  </li>
+{% endif %}
+
           <li class="nav-item">
-            <a class="nav-link {% if request.path == '/records/' %}active{% endif %}" href="{% url 'feeding_records' %}">Records</a>
+              {% if user.is_authenticated and user.is_staff %}
+              <li class="nav-item"><a class="nav-link {% if request.path == '/records/' %}active{% endif %}" href="{% url 'feeding_records' %}">Records</a></li>
+            
           </li>
+          {% endif %}
           <li class="nav-item">
             {% if user.is_authenticated and user.is_staff %}
   <li class="nav-item">

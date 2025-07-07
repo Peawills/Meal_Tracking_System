@@ -1,11 +1,24 @@
 from django.utils import timezone
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from django.http import JsonResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 import json
 from django.contrib.admin.views.decorators import staff_member_required
 from .models import Student, FeedingRecord
+from .forms import StudentForm
+
+@staff_member_required
+def register_student(request):
+    if request.method == 'POST':
+        form = StudentForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('register_student')  # or redirect to success page
+    else:
+        form = StudentForm()
+
+    return render(request, 'students/register_student.html', {'form': form})
 
 # ✅ GET student info from QR
 @login_required
@@ -16,10 +29,25 @@ def scan_page(request):
 @staff_member_required
 @login_required
 def print_qr_cards(request):
+    query = request.GET.get('q', '').strip()
+    student_id = request.GET.get('student_id')
+
+    # Fetch all students only once
+    all_students = Student.objects.all().order_by('name')
     students = Student.objects.all().order_by('class_name', 'name')
-    return render(request, 'students/print_qr_cards.html', {'students': students})
+
+    if student_id:
+        students = students.filter(id=student_id)
+    elif query:
+        students = students.filter(name__icontains=query)
+
+    return render(request, 'students/print_qr_cards.html', {
+        'students': students,
+        'all_students': all_students
+    })
 
 # ✅ Feeding Records View with Class Filter
+@staff_member_required
 @login_required
 def feeding_records(request):
     class_filter = request.GET.get('class')

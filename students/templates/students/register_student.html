@@ -1,0 +1,23 @@
+{% extends 'basetemp.html' %}
+{% block title %}Register Student{% endblock %}
+
+{% block content %}
+  <h3 class="mb-4">➕ Register New Student</h3>
+
+  <form method="post" enctype="multipart/form-data" class="border p-4 rounded bg-light">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-success">Register Student</button>
+  </form>
+{% endblock %}
+{% block extra_css %}
+  <style>
+    form {
+      max-width: 500px;
+      margin: auto;
+    }
+    .form-control {
+      margin-bottom: 15px;
+    }
+  </style>
+{% endblock %}
