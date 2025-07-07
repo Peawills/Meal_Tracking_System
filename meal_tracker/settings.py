@@ -79,10 +79,15 @@ WSGI_APPLICATION = 'meal_tracker.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'meal_tracker_db',  # use the DB name you created
+        'USER': 'postgres',         # or 'meal_user' if you created one
+        'PASSWORD': 'olayemiolaa1',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
+
 
 
 # Password validation
