@@ -1,0 +1,37 @@
+{% extends 'basetemp.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<h2 class="my-4">👩‍💼 Admin Dashboard</h2>
+
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="card text-bg-primary">
+      <div class="card-body">
+        <h5>Total Students</h5>
+        <h3>{{ total_students }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-bg-success">
+      <div class="card-body">
+        <h5>Records Today ({{ today }})</h5>
+        <h3>{{ total_records_today }}</h3>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h4 class="mt-4">🍽️ Meal Breakdown for Today</h4>
+<ul class="list-group">
+  {% for meal, count in meal_counts.items %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      {{ meal|title }}
+      <span class="badge bg-primary rounded-pill">{{ count }}</span>
+    </li>
+  {% empty %}
+    <li class="list-group-item">No records yet today.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

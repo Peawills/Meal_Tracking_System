@@ -25,23 +25,29 @@
 
       <div class="collapse navbar-collapse mx-5" id="navbarNav">
         <ul class="navbar-nav ms-auto">
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/scan/' %}active{% endif %}" href="{% url 'scan_qr' %}">Scan</a>
-          </li>
-          {% if request.user.is_staff %}
+          {% if request.user.is_superuser %}
   <li class="nav-item">
-    <a class="nav-link" href="{% url 'register_student' %}">Register Student</a>
+    <a class="nav-link {% if request.path == '/admin-dashboard/' %}active{% endif %}" href="{% url 'admin_dashboard' %}">Dashboard</a>
   </li>
 {% endif %}
 
           <li class="nav-item">
-              {% if user.is_authenticated and user.is_staff %}
+            <a class="nav-link {% if request.path == '/scan/' %}active{% endif %}" href="{% url 'scan_qr' %}">Scan</a>
+          </li>
+          {% if request.user.is_superuser %}
+  <li class="nav-item">
+    <a class="nav-link {% if request.path == '/register-student/' %}active{% endif %}" href="{% url 'register_student' %}">Register Student</a>
+  </li>
+{% endif %}
+
+          <li class="nav-item">
+              {% if user.is_authenticated and user.is_superuser %}
               <li class="nav-item"><a class="nav-link {% if request.path == '/records/' %}active{% endif %}" href="{% url 'feeding_records' %}">Records</a></li>
             
           </li>
           {% endif %}
           <li class="nav-item">
-            {% if user.is_authenticated and user.is_staff %}
+            {% if user.is_authenticated and user.is_superuser %}
   <li class="nav-item">
     <a class="nav-link {% if request.path == '/print-qr-cards/' %}active{% endif %}" href="{% url 'print_qr_cards' %}">
       Print QR

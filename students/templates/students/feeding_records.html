@@ -1,58 +1,76 @@
 {% extends 'basetemp.html' %}
-{% block title %}Feeding Record{% endblock %}
+{% block title %}Feeding Record - Meal Tracker{% endblock %}
 
 {% block content %}
-  <h3 class="mb-3">🍽️ Meal Attendance Records</h3>
+<h3 class="mb-3">🍽️ Meal Attendance Records</h3>
 
-  <!-- ✅ Filter and Search Form -->
-  <form method="get" class="mb-3 d-flex flex-wrap align-items-center gap-2">
-    <div>
-      <label for="class" class="me-2">Filter by Class:</label>
-      <select name="class" id="class" class="form-select w-auto d-inline-block">
-        <option value="">All Classes</option>
-        {% for class_name in classes %}
-          <option value="{{ class_name }}" {% if class_name == selected_class %}selected{% endif %}>
-            {{ class_name }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div>
-      <input type="text" name="search" placeholder="Search student..." value="{{ search_query }}" class="form-control w-auto" />
-    </div>
-
-    <div>
-      <button type="submit" class="btn btn-primary btn-sm">Apply</button>
-    </div>
-  </form>
-
-  <!-- ✅ Table of Records -->
-  <table class="table table-bordered table-striped">
-    <thead>
-      <tr>
-        <th>Student</th>
-        <th>Class</th>
-        <th>Meal</th>
-        <th>Date</th>
-        <th>Time</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for record in records %}
-        <tr>
-          <td>{{ record.student.name }}</td>
-          <td>{{ record.student.class_name }}</td>
-          <td>{{ record.meal_type|title }}</td>
-          <td>{{ record.date }}</td>
-          <td>{{ record.time|time:"H:i:s" }}</td>
-
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="5" class="text-center">No records found.</td>
-        </tr>
+<!-- ✅ Filter + Search + Date + Export -->
+<form method="get" class="mb-3 row gy-2 gx-2 align-items-end">
+  <div class="col-md-auto">
+    <label class="form-label">Class:</label>
+    <select name="class" class="form-select">
+      <option value="">All Classes</option>
+      {% for class_name in classes %}
+        <option value="{{ class_name }}" {% if class_name == selected_class %}selected{% endif %}>
+          {{ class_name }}
+        </option>
       {% endfor %}
-    </tbody>
-  </table>
+    </select>
+  </div>
+
+  <div class="col-md-auto">
+    <label class="form-label">Search:</label>
+    <input type="text" name="search" value="{{ search_query }}" class="form-control" placeholder="Student name">
+  </div>
+
+  <div class="col-md-auto">
+    <label class="form-label">Start Date:</label>
+    <input type="date" name="start_date" value="{{ start_date }}" class="form-control">
+  </div>
+
+  <div class="col-md-auto">
+    <label class="form-label">End Date:</label>
+    <input type="date" name="end_date" value="{{ end_date }}" class="form-control">
+  </div>
+
+  <div class="col-md-auto">
+    <button type="submit" class="btn btn-primary">🔍 Filter</button>
+    {% if records %}
+      <a href="?{% if selected_class %}class={{ selected_class }}&{% endif %}
+              {% if search_query %}search={{ search_query }}&{% endif %}
+              {% if start_date %}start_date={{ start_date }}&end_date={{ end_date }}&{% endif %}
+              export=csv" class="btn btn-success">
+        ⬇️ Export CSV
+      </a>
+    {% endif %}
+  </div>
+</form>
+
+<!-- ✅ Table -->
+<table class="table table-bordered table-striped">
+  <thead>
+    <tr>
+      <th>Student</th>
+      <th>Class</th>
+      <th>Meal</th>
+      <th>Date</th>
+      <th>Time</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for record in records %}
+      <tr>
+        <td>{{ record.student.name }}</td>
+        <td>{{ record.student.class_name }}</td>
+        <td>{{ record.meal_type|title }}</td>
+        <td>{{ record.date }}</td>
+        <td>{{ record.timestamp|time:"H:i:s" }}</td>
+      </tr>
+    {% empty %}
+      <tr>
+        <td colspan="5" class="text-center">No records found.</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
 {% endblock %}

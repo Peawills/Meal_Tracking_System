@@ -2,13 +2,38 @@ from django.utils import timezone
 from django.shortcuts import render,redirect
 from django.http import JsonResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required , user_passes_test
 import json
-from django.contrib.admin.views.decorators import staff_member_required
 from .models import Student, FeedingRecord
 from .forms import StudentForm
 
-@staff_member_required
+
+
+def is_admin(user):
+    return user.is_superuser  # or user.is_staff if you want staff access too
+
+@user_passes_test(is_admin)
+def admin_dashboard(request):
+    
+    today = timezone.now().date()
+    total_students = Student.objects.count()
+    total_records_today = FeedingRecord.objects.filter(date=today).count()
+
+    meals_today = FeedingRecord.objects.filter(date=today).values('meal_type').distinct()
+    meal_counts = {
+        meal['meal_type']: FeedingRecord.objects.filter(meal_type=meal['meal_type'], date=today).count()
+        for meal in meals_today
+    }
+
+    return render(request, 'students/admin_dashboard.html', {
+        'total_students': total_students,
+        'total_records_today': total_records_today,
+        'meal_counts': meal_counts,
+        'today': today
+    })
+
+
+@user_passes_test(lambda u: u.is_superuser)
 def register_student(request):
     if request.method == 'POST':
         form = StudentForm(request.POST, request.FILES)
@@ -26,7 +51,7 @@ def scan_page(request):
     return render(request, 'students/scan_qr.html')
 
 # ✅ Print all QR cards
-@staff_member_required
+@user_passes_test(lambda u: u.is_superuser)
 @login_required
 def print_qr_cards(request):
     query = request.GET.get('q', '').strip()
@@ -47,11 +72,14 @@ def print_qr_cards(request):
     })
 
 # ✅ Feeding Records View with Class Filter
-@staff_member_required
+@user_passes_test(lambda u: u.is_superuser)
 @login_required
 def feeding_records(request):
     class_filter = request.GET.get('class')
     search_query = request.GET.get('search')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    export = request.GET.get('export')
 
     records = FeedingRecord.objects.select_related('student')
 
@@ -61,6 +89,26 @@ def feeding_records(request):
     if search_query:
         records = records.filter(student__name__icontains=search_query)
 
+    if start_date and end_date:
+        records = records.filter(date__range=[start_date, end_date])
+
+    if export == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="meal_records.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['Student', 'Class', 'Meal', 'Date', 'Time'])
+
+        for record in records:
+            writer.writerow([
+                record.student.name,
+                record.student.class_name,
+                record.meal_type,
+                record.date,
+                record.timestamp.strftime('%H:%M:%S'),
+            ])
+        return response
+
     classes = Student.objects.values_list('class_name', flat=True).distinct()
 
     return render(request, 'students/feeding_records.html', {
@@ -68,6 +116,8 @@ def feeding_records(request):
         'classes': classes,
         'selected_class': class_filter,
         'search_query': search_query,
+        'start_date': start_date,
+        'end_date': end_date,
     })
 
 # ✅ API: Get Student by QR Code
