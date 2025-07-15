@@ -1,1 +1,1 @@
-web: gunicorn meal_tracker.wsgi:application --log-file -
+web: gunicorn meal_tracker.wsgi:application
