@@ -1,6 +1,27 @@
 {% extends 'basetemp.html' %}
-
 {% block title %}Scan QR - Meal Tracker{% endblock %}
+
+{% block extra_css %}
+<style>
+  #reader {
+    width: 320px;
+    height: 320px;
+    margin: 0 auto;
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    background: #f8f9fa;
+  }
+
+  #student-photo {
+    max-width: 150px;
+    max-height: 150px;
+    object-fit: cover;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-top: 10px;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -25,7 +46,7 @@
   <div id="result-box" class="text-center mt-4">
     <h4 id="student-name" class="mb-1"></h4>
     <p id="student-class" class="text-muted"></p>
-    <img id="student-photo" src="" alt="" class="img-fluid"/>
+    <img id="student-photo" src="" alt="" />
   </div>
 
   <!-- ✅ Status Message -->
@@ -38,11 +59,50 @@
     </button>
   </div>
 </div>
+{% endblock %}
 
-<!-- ✅ QR Scanner Script -->
+{% block extra_js %}
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script>
-  let scanner = new Html5Qrcode("reader");
+  let scanner;
+
+  function startScanner() {
+    scanner = new Html5Qrcode("reader");
+
+    Html5Qrcode.getCameras().then(devices => {
+      if (devices.length === 0) {
+        document.getElementById('status-message').innerText = "❌ No camera devices found.";
+        return;
+      }
+
+      const cameraId = devices[0].id;
+      scanner.start(
+        cameraId,
+        { fps: 10, qrbox: 250 },
+        qrCodeMessage => {
+          document.getElementById('live-output').innerText = "Scanned: " + qrCodeMessage;
+          scanner.stop();
+          showStudentInfo(qrCodeMessage);
+        },
+        errorMessage => {
+          console.warn("Scan error:", errorMessage);
+        }
+      ).catch(err => {
+        document.getElementById('status-message').innerText = "❌ Camera error: " + err;
+      });
+    }).catch(err => {
+      document.getElementById('status-message').innerText = "❌ Unable to access camera: " + err;
+    });
+  }
+
+  function restartScanner() {
+    document.getElementById('student-name').innerText = "";
+    document.getElementById('student-class').innerText = "";
+    document.getElementById('student-photo').src = "";
+    document.getElementById('status-message').innerText = "";
+    document.getElementById('live-output').innerText = "Waiting for scan...";
+    startScanner();
+  }
 
   function showStudentInfo(qrCode) {
     fetch(`/api/student/${qrCode}`)
@@ -74,7 +134,7 @@
     .then(response => response.json())
     .then(result => {
       const msgBox = document.getElementById('status-message');
-      msgBox.classList.remove("text-danger", "text-success", "text-primary");
+      msgBox.classList.remove("text-danger", "text-success", "text-primary", "text-warning");
       if (result.status === 'already_fed') {
         msgBox.classList.add("text-warning");
         msgBox.innerText = `⚠️ Already fed for ${mealType}`;
@@ -88,27 +148,7 @@
     });
   }
 
-  function startScanner() {
-    scanner.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: 250 },
-      qrCodeMessage => {
-        document.getElementById('live-output').innerText = "Scanned: " + qrCodeMessage;
-        scanner.stop();
-        showStudentInfo(qrCodeMessage);
-      }
-    );
-  }
-
-  function restartScanner() {
-    document.getElementById('student-name').innerText = "";
-    document.getElementById('student-class').innerText = "";
-    document.getElementById('student-photo').src = "";
-    document.getElementById('status-message').innerText = "";
-    document.getElementById('live-output').innerText = "Waiting for scan...";
-    startScanner();
-  }
-
-  startScanner();
+  // Start camera on page load
+  document.addEventListener("DOMContentLoaded", startScanner);
 </script>
 {% endblock %}
