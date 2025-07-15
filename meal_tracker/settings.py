@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-sv(s4fx!h156&a%z-^#lejf854*2i#o)w=^$)9gw-3i_gijq-4
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['meal-tracking-system-1.onrender.com', '127.0.0.1', 'localhost', '192.168.137.192']  # Change this to your domain or IP address in production
+ALLOWED_HOSTS = ['meal-tracking-system.onrender.com', '127.0.0.1', 'localhost', '192.168.137.192']  # Change this to your domain or IP address in production
 
 
 # Application definition
