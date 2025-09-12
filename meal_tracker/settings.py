@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-sv(s4fx!h156&a%z-^#lejf854*2i#o)w=^$)9gw-3i_gijq-4"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
     "meal-tracking-system.onrender.com",
