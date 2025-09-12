@@ -1,1 +1,1 @@
-web: gunicorn meal_tracker.wsgi:application
+gunicorn meal_tracker.wsgi:application
