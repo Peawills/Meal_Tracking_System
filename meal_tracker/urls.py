@@ -5,9 +5,9 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('students.urls')),
- 
+    path("admin/", admin.site.urls),
+    path("accounts/", include("accounts.urls")),  # 👈 added
+    path("", include("students.urls")),
 ]
 # ✅ This part serves media files (like photos or QR images) only in development mode
 if settings.DEBUG:

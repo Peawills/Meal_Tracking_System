@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-sv(s4fx!h156&a%z-^#lejf854*2i#o)w=^$)9gw-3i_gijq-4"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = [
     "meal-tracking-system.onrender.com",
@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "students",
     "widget_tweaks",
+    "accounts",
 ]
 
 MIDDLEWARE = [
@@ -63,7 +64,10 @@ ROOT_URLCONF = "meal_tracker.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "students/templates"],
+        "DIRS": [
+            BASE_DIR / "students/templates",
+            BASE_DIR / "accounts/templates",
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
