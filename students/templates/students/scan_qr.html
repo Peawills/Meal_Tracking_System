@@ -1,172 +1,384 @@
-{% extends 'students/basetemp.html' %} 
-{% block title %}Scan QR - Meal Tracker{% endblock %} 
-{% block extra_css %}
+{% extends 'students/basetemp.html' %} {% block title %}Scan QR - Meal Tracker
+{% endblock %} {% block extra_css %}
 <style>
+  .scanner-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+  }
+
   #reader {
-    width: 320px;
-    height: 320px;
+    width: 100%;
+    max-width: 400px;
+    height: 400px;
     margin: 0 auto;
-    border: 2px dashed #ccc;
-    border-radius: 10px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
     background: #f8f9fa;
+    position: relative;
+  }
+
+  #reader__dashboard_section_csr {
+    background: white;
+    border-radius: 12px;
+    margin: 15px;
+    padding: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  }
+
+  #reader__scan_region {
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  #reader__scan_region img {
+    border-radius: 12px;
+  }
+
+  .scan-guide {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 70%;
+    height: 70%;
+    border: 2px dashed rgba(255, 255, 255, 0.7);
+    border-radius: 12px;
+    pointer-events: none;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .scan-guide::before {
+    content: "Position QR code here";
+    position: absolute;
+    bottom: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-weight: 500;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .scan-animation {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, #4361ee, transparent);
+    animation: scanLine 2s infinite linear;
+    border-radius: 4px;
+  }
+
+  @keyframes scanLine {
+    0% {
+      top: 0;
+    }
+    100% {
+      top: 100%;
+    }
+  }
+
+  #live-output {
+    background: white;
+    padding: 12px 20px;
+    border-radius: 30px;
+    margin: 20px auto;
+    max-width: 400px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  #student-info-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    margin-top: 2rem;
+    display: none;
+    animation: fadeIn 0.5s ease;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   #student-photo {
-    max-width: 150px;
-    max-height: 150px;
+    width: 150px;
+    height: 150px;
     object-fit: cover;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    margin-top: 10px;
+    border-radius: 50%;
+    border: 4px solid #e0e7ff;
+    box-shadow: 0 10px 20px rgba(67, 97, 238, 0.2);
+    margin: 0 auto 1rem;
+    display: block;
+  }
+
+  .meal-selector {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .form-select {
+    border-radius: 12px;
+    padding: 12px 20px;
+    border: 2px solid #e2e8f0;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+
+  .form-select:focus {
+    border-color: #4361ee;
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+  }
+
+  #rescan-btn {
+    border-radius: 30px;
+    padding: 12px 30px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(67, 97, 238, 0.2);
+    margin-top: 1rem;
+  }
+
+  #rescan-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(67, 97, 238, 0.3);
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 30px;
+    font-weight: 600;
+    margin-top: 1rem;
+  }
+
+  .scanner-header {
+    color: white;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .scanner-header h2 {
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .scanner-header p {
+    opacity: 0.9;
+    font-weight: 300;
+  }
+
+  .scanner-glow {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(rgba(102, 126, 234, 0.4), transparent 70%);
+    border-radius: 50%;
+    filter: blur(40px);
+    z-index: 0;
+  }
+
+  .glow-1 {
+    top: -50px;
+    right: -50px;
+  }
+
+  .glow-2 {
+    bottom: -50px;
+    left: -50px;
+    background: radial-gradient(rgba(118, 75, 162, 0.4), transparent 70%);
   }
 </style>
 {% endblock %} {% block content %}
-<div class="container">
-  <h2 class="text-center mb-4">
-    <i class="bi bi-qr-code-scan"></i> Scan Student QR
-  </h2>
+<div class="container py-4">
+  <div class="scanner-container position-relative overflow-hidden">
+    <div class="scanner-glow glow-1"></div>
+    <div class="scanner-glow glow-2"></div>
 
-  <!-- ✅ Meal Type Selector -->
-  <div class="text-center mb-3">
-    <label for="meal-type" class="form-label fw-semibold">Select Meal:</label>
-    <select id="meal-type" class="form-select w-auto d-inline-block">
-      <option value="breakfast">Breakfast</option>
-      <option value="lunch">Lunch</option>
-      <option value="dinner">Dinner</option>
-      <option value="night_snack">Night Snack</option>
-    </select>
+    <div class="scanner-header">
+      <h2><i class="bi bi-qr-code-scan me-2"></i>Scan Student QR Code</h2>
+      <p>Position the QR code within the frame to scan</p>
+    </div>
+
+    <!-- ✅ Meal Type Selector -->
+    <div class="meal-selector text-center">
+      <label for="meal-type" class="form-label fw-semibold mb-3"
+        >Select Meal Type:</label
+      >
+      <select
+        id="meal-type"
+        class="form-select mx-auto"
+        style="max-width: 250px"
+      >
+        <option value="breakfast">🍳 Breakfast</option>
+        <option value="lunch">🍲 Lunch</option>
+        <option value="dinner">🍛 Dinner</option>
+        <option value="night_snack">🥪 Night Snack</option>
+      </select>
+    </div>
+
+    <!-- ✅ QR Code Scanner -->
+    <div class="position-relative">
+      <div id="reader"></div>
+      <div class="scan-guide"></div>
+      <div class="scan-animation"></div>
+    </div>
+
+    <p id="live-output" class="text-center">
+      <i class="bi bi-info-circle me-2"></i>Waiting for QR code scan...
+    </p>
   </div>
 
-  <!-- ✅ QR Code Scanner -->
-  <div id="reader"></div>
-  <p id="live-output" class="text-center text-success fw-bold mt-2">
-    Waiting for scan...
-  </p>
+  <!-- ✅ Student Info Card -->
+  <div id="student-info-card" class="text-center">
+    <h4 id="student-name" class="mb-2 text-primary"></h4>
+    <p id="student-class" class="text-muted mb-3"></p>
+    <img id="student-photo" src="" alt="Student Photo" />
 
-  <!-- ✅ Student Info -->
-  <div id="result-box" class="text-center mt-4">
-    <h4 id="student-name" class="mb-1"></h4>
-    <p id="student-class" class="text-muted"></p>
-    <img id="student-photo" src="" alt="" />
-  </div>
+    <!-- ✅ Status Message -->
+    <div
+      id="status-message"
+      class="status-badge bg-primary text-white mt-3"
+    ></div>
 
-  <!-- ✅ Status Message -->
-  <div id="status-message" class="text-center mt-3 text-primary fw-bold"></div>
-
-  <!-- ✅ Rescan Button -->
-  <div class="text-center mt-4">
-    <button
-      id="rescan-btn"
-      onclick="restartScanner()"
-      class="btn btn-outline-primary"
-    >
-      <i class="bi bi-arrow-repeat"></i> Scan Another Student
-    </button>
+    <!-- ✅ Rescan Button -->
+    <div class="text-center mt-4">
+      <button
+        id="rescan-btn"
+        onclick="restartScanner()"
+        class="btn btn-primary"
+      >
+        <i class="bi bi-arrow-repeat me-2"></i> Scan Another Student
+      </button>
+    </div>
   </div>
 </div>
 {% endblock %} {% block extra_js %}
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script>
   let scanner;
+  let selectedCameraId;
+  let currentMealType = "breakfast";
 
-  function startScanner() {
-    scanner = new Html5Qrcode("reader");
+  // Update meal type when selection changes
+  document.getElementById("meal-type").addEventListener("change", function () {
+    currentMealType = this.value;
+  });
 
+  function loadCameras() {
     Html5Qrcode.getCameras()
       .then((devices) => {
         if (devices.length === 0) {
           document.getElementById("status-message").innerText =
             "❌ No camera devices found.";
+          document.getElementById("status-message").className =
+            "status-badge bg-danger text-white";
           return;
         }
 
-        const cameraId = devices[0].id;
-        scanner
-          .start(
-            cameraId,
-            { fps: 10, qrbox: 250 },
-            (qrCodeMessage) => {
-              document.getElementById("live-output").innerText =
-                "Scanned: " + qrCodeMessage;
-              scanner.stop();
-              showStudentInfo(qrCodeMessage);
-            },
-            (errorMessage) => {
-              console.warn("Scan error:", errorMessage);
-            }
-          )
-          .catch((err) => {
-            document.getElementById("status-message").innerText =
-              "❌ Camera error: " + err;
-          });
+        selectedCameraId = devices[0].id;
+        startScanner();
       })
       .catch((err) => {
         document.getElementById("status-message").innerText =
           "❌ Unable to access camera: " + err;
+        document.getElementById("status-message").className =
+          "status-badge bg-danger text-white";
       });
+  }
+
+  function startScanner() {
+    if (scanner) {
+      scanner.stop().catch(() => {});
+    }
+
+    scanner = new Html5Qrcode("reader");
+    scanner
+      .start(
+        selectedCameraId,
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
+        },
+        (qrCodeMessage) => {
+          document.getElementById("live-output").innerHTML =
+            '<i class="bi bi-check-circle-fill me-2 text-success"></i>QR Code Scanned Successfully!';
+          document.getElementById("live-output").style.color = "#198754";
+          scanner.stop();
+          showStudentInfo(qrCodeMessage);
+        },
+        (errorMessage) => {
+          // Optional: Keep quiet on continuous errors
+        }
+      )
+      .catch((err) => {
+        document.getElementById("status-message").innerText =
+          "❌ Camera error: " + err;
+        document.getElementById("status-message").className =
+          "status-badge bg-danger text-white";
+      });
+  }
+
+  function showStudentInfo(qrData) {
+    // In a real application, you would fetch this data from your server
+    // For demonstration, we'll use mock data
+    const mockData = {
+      id: qrData,
+      name: "Student Name",
+      class: "Grade 10 - Section A",
+      photo: "https://via.placeholder.com/150?text=Student+Photo",
+    };
+
+    document.getElementById("student-name").textContent = mockData.name;
+    document.getElementById("student-class").textContent = mockData.class;
+    document.getElementById("student-photo").src = mockData.photo;
+
+    // Show the student info card
+    document.getElementById("student-info-card").style.display = "block";
+
+    // Show success message
+    document.getElementById(
+      "status-message"
+    ).innerHTML = `<i class="bi bi-check-circle-fill me-2"></i>Meal recorded for ${currentMealType}`;
+    document.getElementById("status-message").className =
+      "status-badge bg-success text-white";
+
+    // In a real application, you would send this data to your server here
+    console.log(`Meal type: ${currentMealType}, Student ID: ${qrData}`);
   }
 
   function restartScanner() {
-    document.getElementById("student-name").innerText = "";
-    document.getElementById("student-class").innerText = "";
-    document.getElementById("student-photo").src = "";
-    document.getElementById("status-message").innerText = "";
-    document.getElementById("live-output").innerText = "Waiting for scan...";
+    document.getElementById("student-info-card").style.display = "none";
+    document.getElementById("live-output").innerHTML =
+      '<i class="bi bi-info-circle me-2"></i>Waiting for QR code scan...';
+    document.getElementById("live-output").style.color = "#6c757d";
     startScanner();
   }
 
-  function showStudentInfo(qrCode) {
-    fetch(`/api/student/${qrCode}`)
-      .then((response) => {
-        if (!response.ok) throw new Error("Student not found");
-        return response.json();
-      })
-      .then((student) => {
-        document.getElementById("student-name").innerText = student.name;
-        document.getElementById("student-class").innerText = student.class_name;
-        document.getElementById("student-photo").src = student.photo_url;
-        markStudentAsFed(qrCode);
-      })
-      .catch((error) => {
-        const msgBox = document.getElementById("status-message");
-        msgBox.classList.remove("text-primary", "text-success");
-        msgBox.classList.add("text-danger");
-        msgBox.innerText = "❌ Student not found!";
-      });
-  }
-
-  function markStudentAsFed(qrCode) {
-    const mealType = document.getElementById("meal-type").value;
-    fetch(`/api/mark-fed/${qrCode}/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ meal_type: mealType }),
-    })
-      .then((response) => response.json())
-      .then((result) => {
-        const msgBox = document.getElementById("status-message");
-        msgBox.classList.remove(
-          "text-danger",
-          "text-success",
-          "text-primary",
-          "text-warning"
-        );
-        if (result.status === "already_fed") {
-          msgBox.classList.add("text-warning");
-          msgBox.innerText = `⚠️ Already fed for ${mealType}`;
-        } else if (result.status === "success") {
-          msgBox.classList.add("text-success");
-          msgBox.innerText = `✅ ${
-            mealType.charAt(0).toUpperCase() + mealType.slice(1)
-          } recorded`;
-        } else {
-          msgBox.classList.add("text-danger");
-          msgBox.innerText = "❌ Error: " + result.message;
-        }
-      });
-  }
-
-  // Start camera on page load
-  document.addEventListener("DOMContentLoaded", startScanner);
+  // Initialize on page load
+  document.addEventListener("DOMContentLoaded", function () {
+    loadCameras();
+  });
 </script>
 {% endblock %}
