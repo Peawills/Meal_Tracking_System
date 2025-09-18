@@ -3,90 +3,334 @@
 
 {% block extra_css %}
 <style>
+  :root {
+    --primary: #4361ee;
+    --secondary: #f8f9fa;
+    --accent: #3a0ca3;
+    --light: #ffffff;
+    --dark: #2b2d42;
+    --success: #4cc9f0;
+    --warning: #f72585;
+    --info: #7209b7;
+    --border-radius: 16px;
+    --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    --transition: all 0.3s ease;
+  }
+  
+  .page-header {
+    background: linear-gradient(120deg, var(--primary), var(--accent));
+    color: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--box-shadow);
+  }
+  
+  .filter-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--box-shadow);
+  }
+  
   .card-wrapper {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 25px;
     margin-top: 20px;
   }
 
   .student-card {
-    width: 180px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    padding: 10px;
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 15px;
     text-align: center;
-    background: #fff;
+    box-shadow: var(--box-shadow);
+    transition: var(--transition);
+    border: 1px solid rgba(67, 97, 238, 0.1);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .student-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+  }
+  
+  .student-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
   }
 
-  .student-card img {
+  .student-photo {
     width: 100px;
     height: 100px;
     object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid #e0e7ff;
+    margin: 0 auto 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  }
+  
+  .qr-code {
+    width: 120px;
+    height: 120px;
+    margin: 10px auto;
+    padding: 8px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  }
+  
+  .student-name {
+    font-weight: 600;
+    color: var(--dark);
+    margin: 8px 0 4px;
+    font-size: 1rem;
+  }
+  
+  .student-class {
+    color: #6c757d;
+    font-size: 0.85rem;
     margin-bottom: 5px;
   }
-
+  
+  .student-id {
+    color: var(--primary);
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  
+  .print-btn {
+    background: linear-gradient(120deg, var(--primary), var(--accent));
+    border: none;
+    border-radius: 30px;
+    padding: 12px 25px;
+    font-weight: 600;
+    box-shadow: 0 5px 15px rgba(67, 97, 238, 0.2);
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .print-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(67, 97, 238, 0.3);
+  }
+  
+  .action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .btn-download {
+    background: linear-gradient(120deg, #10b981, #059669);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    padding: 10px 20px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin: 20px 0;
+  }
+  
+  .empty-state i {
+    font-size: 3rem;
+    color: #dee2e6;
+    margin-bottom: 15px;
+  }
+  
+  .form-control, .form-select {
+    border-radius: 10px;
+    padding: 10px 15px;
+    border: 2px solid #e2e8f0;
+    transition: var(--transition);
+  }
+  
+  .form-control:focus, .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+  }
+  
   @media print {
-    button, .btn, form {
+    .no-print, .filter-card, .page-header, .action-buttons {
       display: none !important;
     }
-
+    
+    body {
+      background: white;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .container {
+      max-width: 100% !important;
+      padding: 0;
+    }
+    
+    .card-wrapper {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      padding: 15px;
+    }
+    
     .student-card {
+      box-shadow: none;
+      border: 1px solid #ddd;
       page-break-inside: avoid;
       break-inside: avoid;
     }
-
-    body {
-      background: white;
+    
+    @page {
+      margin: 0.5cm;
+      size: landscape;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .card-wrapper {
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 15px;
+    }
+    
+    .student-card {
+      padding: 12px;
+    }
+    
+    .student-photo {
+      width: 80px;
+      height: 80px;
+    }
+    
+    .qr-code {
+      width: 100px;
+      height: 100px;
     }
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h3>🧾 QR Cards for Students</h3>
-  <button onclick="window.print()" class="btn btn-primary">🖨️ Print</button>
-</div>
-
-<!-- 🔍 Search and Filter Form -->
-<form method="get" class="row g-2 mb-4">
-  <div class="col-md-5">
-    <input type="text" name="q" class="form-control" placeholder="Search by name..." value="{{ request.GET.q }}">
-  </div>
-  <div class="col-md-5">
-    <select name="student_id" class="form-select">
-      <option value="">-- Select a student --</option>
-      {% for s in all_students %}
-        <option value="{{ s.id }}" {% if request.GET.student_id == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="col-md-2">
-    <button type="submit" class="btn btn-success w-100">🔍 Filter</button>
-  </div>
-</form>
-
-<!-- 🧾 QR Cards Display -->
-<div class="card-wrapper">
-  {% for student in students %}
-    <div class="student-card">
-      {% if student.photo %}
-        <img src="{{ student.photo.url }}" alt="Photo" class="img-thumbnail"><br>
-      {% else %}
-        <div class="text-muted small mb-1">No Photo</div>
-      {% endif %}
-
-      {% if student.qr_code_image %}
-        <img src="{{ student.qr_code_image.url }}" alt="QR Code"><br>
-      {% else %}
-        <div class="text-muted small">No QR</div>
-      {% endif %}
-
-      <strong>{{ student.name }}</strong><br>
-      <small class="text-muted">{{ student.class_name }}</small>
+<div class="container py-4">
+  <!-- Page Header -->
+  <div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+      <h2 class="mb-1"><i class="bi bi-qr-code me-2"></i>Student QR Cards</h2>
+      <p class="mb-0">Print QR code cards for meal tracking</p>
     </div>
-  {% endfor %}
+    <button onclick="window.print()" class="print-btn btn text-white">
+      <i class="bi bi-printer me-1"></i> Print All
+    </button>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="action-buttons no-print">
+    <button onclick="window.print()" class="print-btn btn text-white">
+      <i class="bi bi-printer me-1"></i> Print
+    </button>
+    <button class="btn-download" onclick="downloadAllQRCodes()">
+      <i class="bi bi-download me-1"></i> Download All
+    </button>
+  </div>
+
+  <!-- Search and Filter Card -->
+  <div class="filter-card no-print">
+    <h5 class="mb-3"><i class="bi bi-funnel me-2"></i>Filter Students</h5>
+    <form method="get" class="row g-3">
+      <div class="col-md-5">
+        <div class="input-group">
+          <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+          <input type="text" name="q" class="form-control border-start-0" placeholder="Search by name..." value="{{ request.GET.q }}">
+        </div>
+      </div>
+      <div class="col-md-5">
+        <select name="student_id" class="form-select">
+          <option value="">-- Select a specific student --</option>
+          {% for s in all_students %}
+            <option value="{{ s.id }}" {% if request.GET.student_id == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }} - {{ s.class_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-filter me-1"></i> Filter
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- QR Cards Display -->
+  {% if students %}
+  <div class="card-wrapper">
+    {% for student in students %}
+      <div class="student-card">
+        {% if student.photo %}
+          <img src="{{ student.photo.url }}" alt="Photo" class="student-photo">
+        {% else %}
+          <div class="student-photo bg-light d-flex align-items-center justify-content-center">
+            <i class="bi bi-person text-muted" style="font-size: 2rem;"></i>
+          </div>
+        {% endif %}
+
+        {% if student.qr_code_image %}
+          <img src="{{ student.qr_code_image.url }}" alt="QR Code" class="qr-code">
+        {% else %}
+          <div class="qr-code bg-light d-flex align-items-center justify-content-center">
+            <i class="bi bi-qr-code text-muted" style="font-size: 2rem;"></i>
+          </div>
+        {% endif %}
+
+        <div class="student-name">{{ student.name }}</div>
+        <div class="student-class">{{ student.class_name }}</div>
+        <div class="student-id">ID: {{ student.id }}</div>
+      </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-inboxes"></i>
+    <h4>No students found</h4>
+    <p class="text-muted">Try adjusting your search filters</p>
+  </div>
+  {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function downloadAllQRCodes() {
+    // This would typically connect to your backend to generate a ZIP file
+    alert("This would download a ZIP file containing all QR codes. Implementation would require backend support.");
+  }
+  
+  // Add some interactive effects
+  document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.student-card');
+    
+    cards.forEach(card => {
+      card.addEventListener('click', function() {
+        this.classList.toggle('border-primary');
+      });
+    });
+  });
+</script>
 {% endblock %}

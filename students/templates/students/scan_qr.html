@@ -1,5 +1,6 @@
-{% extends 'students/basetemp.html' %} {% block title %}Scan QR - Meal Tracker
-{% endblock %} {% block extra_css %}
+{% extends 'students/basetemp.html' %} 
+{% block title %}Scan QR - Meal Tracker {% endblock %} 
+{% block extra_css %}
 <style>
   .scanner-container {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -132,8 +133,20 @@
     background: white;
     border-radius: 16px;
     padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .camera-selector {
+    background: white;
+    border-radius: 16px;
+    padding: 1rem;
     margin-bottom: 2rem;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
   }
 
   .form-select {
@@ -142,6 +155,7 @@
     border: 2px solid #e2e8f0;
     font-weight: 500;
     transition: all 0.3s ease;
+    max-width: 250px;
   }
 
   .form-select:focus {
@@ -208,6 +222,27 @@
     left: -50px;
     background: radial-gradient(rgba(118, 75, 162, 0.4), transparent 70%);
   }
+
+  .camera-switch-btn {
+    background: linear-gradient(135deg, #4361ee, #3a0ca3);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .camera-switch-btn:hover {
+    transform: rotate(90deg);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  }
 </style>
 {% endblock %} {% block content %}
 <div class="container py-4">
@@ -225,16 +260,29 @@
       <label for="meal-type" class="form-label fw-semibold mb-3"
         >Select Meal Type:</label
       >
-      <select
-        id="meal-type"
-        class="form-select mx-auto"
-        style="max-width: 250px"
-      >
+      <select id="meal-type" class="form-select mx-auto">
         <option value="breakfast">🍳 Breakfast</option>
         <option value="lunch">🍲 Lunch</option>
         <option value="dinner">🍛 Dinner</option>
         <option value="night_snack">🥪 Night Snack</option>
       </select>
+    </div>
+
+    <!-- ✅ Camera Selector -->
+    <div class="camera-selector text-center">
+      <label for="camera-select" class="form-label fw-semibold mb-0 me-2"
+        >Camera:</label
+      >
+      <select id="camera-select" class="form-select me-2">
+        <option value="">Loading cameras...</option>
+      </select>
+      <button
+        class="camera-switch-btn"
+        id="switch-camera"
+        title="Switch camera"
+      >
+        <i class="bi bi-camera-video"></i>
+      </button>
     </div>
 
     <!-- ✅ QR Code Scanner -->
@@ -279,11 +327,18 @@
   let scanner;
   let selectedCameraId;
   let currentMealType = "breakfast";
+  let cameras = [];
+  let currentCameraIndex = 0;
 
   // Update meal type when selection changes
   document.getElementById("meal-type").addEventListener("change", function () {
     currentMealType = this.value;
   });
+
+  // Switch camera when button is clicked
+  document
+    .getElementById("switch-camera")
+    .addEventListener("click", switchCamera);
 
   function loadCameras() {
     Html5Qrcode.getCameras()
@@ -296,7 +351,20 @@
           return;
         }
 
-        selectedCameraId = devices[0].id;
+        cameras = devices;
+        populateCameraSelect(devices);
+
+        // Try to find back camera first
+        let backCameraIndex = devices.findIndex(
+          (device) =>
+            device.label.toLowerCase().includes("back") ||
+            device.label.toLowerCase().includes("rear")
+        );
+
+        if (backCameraIndex === -1) backCameraIndex = 0;
+
+        selectedCameraId = devices[backCameraIndex].id;
+        currentCameraIndex = backCameraIndex;
         startScanner();
       })
       .catch((err) => {
@@ -305,6 +373,40 @@
         document.getElementById("status-message").className =
           "status-badge bg-danger text-white";
       });
+  }
+
+  function populateCameraSelect(devices) {
+    const select = document.getElementById("camera-select");
+    select.innerHTML = "";
+
+    devices.forEach((device, index) => {
+      const option = document.createElement("option");
+      option.value = device.id;
+      option.text = device.label || `Camera ${index + 1}`;
+      option.selected = index === currentCameraIndex;
+      select.appendChild(option);
+    });
+
+    // Add change event listener to select
+    select.addEventListener("change", function () {
+      selectedCameraId = this.value;
+      currentCameraIndex = cameras.findIndex(
+        (cam) => cam.id === selectedCameraId
+      );
+      restartScanner();
+    });
+  }
+
+  function switchCamera() {
+    if (cameras.length <= 1) return;
+
+    currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+    selectedCameraId = cameras[currentCameraIndex].id;
+
+    // Update select value
+    document.getElementById("camera-select").value = selectedCameraId;
+
+    restartScanner();
   }
 
   function startScanner() {
