@@ -1,11 +1,46 @@
-{% extends 'students/basetemp.html' %} 
-{% block title %}Create User{% endblock%}
+{% extends 'students/basetemp.html' %} {% block title %}Create User{% endblock%}
 {% block content %}
 <div class="container mt-4">
-  <h3 class="mb-3">👤 Create New User</h3>
-  <form method="post" class="card p-3">
-    {% csrf_token %} {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Create User</button>
-  </form>
+  <!-- User Statistics Card -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">📊 User Statistics</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-3">
+          <div class="card bg-primary text-white text-center">
+            <div class="card-body">
+              <h4>{{ total_users }}</h4>
+              <p>Total Users</p>
+            </div>
+          </div>
+        </div>
+        {% for stat in user_stats %}
+        <div class="col-md-3">
+          <div class="card bg-info text-white text-center">
+            <div class="card-body">
+              <h4>{{ stat.count }}</h4>
+              <p>{{ stat.role|default:"No Role" }} Users</p>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Create User Form -->
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0">👤 Create New User</h5>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %} {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Create User</button>
+      </form>
+    </div>
+  </div>
 </div>
 {% endblock %}

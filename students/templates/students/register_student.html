@@ -1,23 +1,201 @@
-{% extends 'basetemp.html' %}
-{% block title %}Register Student - Meal Tracker{% endblock %}
+{% extends 'students/basetemp.html' %} {% block title %}Register Student - Meal
+Tracker{% endblock %} {% block content %}
+<div class="registration-container">
+  <div class="registration-card">
+    <div class="registration-header">
+      <div class="header-icon">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+      </div>
+      <h3>Register New Student</h3>
+      <p>
+        Complete the form below to add a new student to the meal tracking system
+      </p>
+    </div>
 
-{% block content %}
-  <h3 class="mb-4">➕ Register New Student</h3>
+    <form method="post" enctype="multipart/form-data" class="modern-form">
+      {% csrf_token %} {% for field in form %}
+      <div class="form-group">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }} {% if field.help_text %}
+        <div class="help-text">{{ field.help_text }}</div>
+        {% endif %} {% for error in field.errors %}
+        <div class="error-message">{{ error }}</div>
+        {% endfor %}
+      </div>
+      {% endfor %}
 
-  <form method="post" enctype="multipart/form-data" class="border p-4 rounded bg-light">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-success">Register Student</button>
-  </form>
-{% endblock %}
-{% block extra_css %}
-  <style>
-    form {
-      max-width: 500px;
-      margin: auto;
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">
+          <span>Register Student</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M5 12h14"></path>
+            <path d="m12 5 7 7-7 7"></path>
+          </svg>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %} {% block extra_css %}
+<style>
+  .registration-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 100px);
+    padding: 20px;
+    background: #f8fafc;
+  }
+
+  .registration-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05), 0 5px 10px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 500px;
+    overflow: hidden;
+  }
+
+  .registration-header {
+    background: #4f46e5;
+    color: white;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .header-icon {
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .registration-header h3 {
+    margin: 0 0 8px;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  .registration-header p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 0.9rem;
+  }
+
+  .modern-form {
+    padding: 24px;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+  }
+
+  .help-text {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-top: 4px;
+  }
+
+  .error-message {
+    font-size: 0.85rem;
+    color: #ef4444;
+    margin-top: 4px;
+  }
+
+  .form-actions {
+    margin-top: 24px;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 12px 20px;
+    background: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    background: #4338ca;
+  }
+
+  .btn-primary svg {
+    margin-left: 8px;
+  }
+
+  @media (max-width: 576px) {
+    .registration-card {
+      border-radius: 0;
+      box-shadow: none;
     }
-    .form-control {
-      margin-bottom: 15px;
+
+    .registration-container {
+      padding: 0;
+      align-items: flex-start;
     }
-  </style>
+  }
+</style>
 {% endblock %}

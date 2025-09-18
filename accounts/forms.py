@@ -21,3 +21,10 @@ class CustomUserCreationForm(UserCreationForm):
             "is_active",
             "role",
         )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Remove help text from all fields
+        for field_name in self.fields:
+            self.fields[field_name].help_text = ""

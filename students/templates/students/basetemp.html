@@ -55,9 +55,9 @@
   </li>
 {% endif %}
 
-{% if user.is_authenticated and user.is_staff %}
+{% if user.is_authenticated and user.is_superuser %}
   <div class="nav-item">
-    <a href="{% url 'register_user' %}" class="nav-link">Admin: Create New User</a>
+    <a href="{% url 'register_user' %}" class="nav-link">Create New User</a>
   </div>
 {% endif %}
             <form method="post" action="{% url 'logout' %}" style="display: inline;">
