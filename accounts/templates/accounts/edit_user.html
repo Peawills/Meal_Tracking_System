@@ -1,0 +1,42 @@
+{% extends 'students/basetemp.html' %}
+{% block title %}Edit User{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h2>Edit User - {{ user_obj.username }}</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label class="form-label">Username</label>
+      <input type="text" name="username" value="{{ user_obj.username }}" class="form-control">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Email</label>
+      <input type="email" name="email" value="{{ user_obj.email }}" class="form-control">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Role</label>
+      <select name="role" class="form-control">
+        {% for group in groups %}
+        <option value="{{ group.name }}" {% if group in user_obj.groups.all %}selected{% endif %}>{{ group.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-check">
+      <input type="checkbox" name="is_staff" class="form-check-input" {% if user_obj.is_staff %}checked{% endif %}>
+      <label class="form-check-label">Staff</label>
+    </div>
+
+    <div class="form-check mb-3">
+      <input type="checkbox" name="is_active" class="form-check-input" {% if user_obj.is_active %}checked{% endif %}>
+      <label class="form-check-label">Active</label>
+    </div>
+
+    <button class="btn btn-primary">Update User</button>
+    <a href="{% url 'view_users' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}

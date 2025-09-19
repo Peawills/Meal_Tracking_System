@@ -53,7 +53,17 @@
             </td>
             <td>{{ user.date_joined|date:"M d, Y" }}</td>
           </tr>
+                 <td>
+  <a href="{% url 'edit_user' user.id %}" class="btn btn-sm btn-warning">
+    <i class="bi bi-pencil"></i>
+  </a>
+  <a href="{% url 'delete_user' user.id %}" class="btn btn-sm btn-danger">
+    <i class="bi bi-trash"></i>
+  </a>
+</td>
           {% endfor %}
+   
+
         </tbody>
       </table>
     </div>

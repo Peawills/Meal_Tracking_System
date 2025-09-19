@@ -5,6 +5,8 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import Group
 from .forms import CustomUserCreationForm
 from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
+from django.contrib.auth.models import Group, User
 
 
 @staff_member_required
@@ -45,3 +47,41 @@ def register_user(request):
 def view_users(request):
     users = User.objects.all().order_by("-date_joined")
     return render(request, "accounts/view_users.html", {"users": users})
+
+
+@staff_member_required
+def edit_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+
+    if request.method == "POST":
+        user.username = request.POST.get("username")
+        user.email = request.POST.get("email")
+        user.is_active = "is_active" in request.POST
+        user.is_staff = "is_staff" in request.POST
+
+        # Update group
+        role = request.POST.get("role")
+        user.groups.clear()
+        if role:
+            group = Group.objects.get(name=role)
+            user.groups.add(group)
+
+        user.save()
+        messages.success(request, f"✅ User '{user.username}' updated successfully.")
+        return redirect("view_users")
+
+    return render(
+        request,
+        "accounts/edit_user.html",
+        {"user_obj": user, "groups": Group.objects.all()},
+    )
+
+
+@staff_member_required
+def delete_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    if request.method == "POST":
+        user.delete()
+        messages.success(request, f"🗑️ User deleted successfully.")
+        return redirect("view_users")
+    return render(request, "accounts/delete_user.html", {"user_obj": user})
