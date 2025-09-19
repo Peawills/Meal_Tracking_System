@@ -11,8 +11,8 @@ class Student(models.Model):
     class_name = models.CharField(max_length=50)
     admission_number = models.CharField(max_length=30, unique=True)
     qr_code_id = models.CharField(max_length=100, unique=True, blank=True)
-    photo = models.ImageField(upload_to='student_photos/', blank=True, null=True)
-    qr_code_image = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
+    photo = models.ImageField(upload_to="student_photos/", blank=True, null=True)
+    qr_code_image = models.ImageField(upload_to="qr_codes/", blank=True, null=True)
 
     def __str__(self):
         return f"{self.name} ({self.admission_number})"
@@ -22,10 +22,10 @@ class Student(models.Model):
             self.qr_code_id = str(uuid.uuid4())[:8]  # Generate short unique ID
         super().save(*args, **kwargs)
 
-       # Generate QR code from qr_code_id
+        # Generate QR code from qr_code_id
         qr = qrcode.make(self.qr_code_id)
         buffer = BytesIO()
-        qr.save(buffer, format='PNG')
+        qr.save(buffer, format="PNG")
         filename = f"{self.admission_number}_qr.png"
 
         # Save the image to the qr_code_image field
@@ -36,21 +36,26 @@ class Student(models.Model):
 
 
 MEAL_TYPES = [
-    ('breakfast', 'Breakfast'),
-    ('lunch', 'Lunch'),
-    ('dinner', 'Dinner'),
-    ('night_snack', 'Night Snack'),
+    ("breakfast", "Breakfast"),
+    ("lunch", "Lunch"),
+    ("dinner", "Dinner"),
+    ("night_snack", "Night Snack"),
 ]
 
+
 class FeedingRecord(models.Model):
-    student = models.ForeignKey('Student', on_delete=models.CASCADE)
+    student = models.ForeignKey("Student", on_delete=models.CASCADE)
     class_name = models.CharField(max_length=50)
     date = models.DateField(default=timezone.now)
     time = models.TimeField(default=timezone.now)
     meal_type = models.CharField(max_length=20, choices=MEAL_TYPES)
 
     class Meta:
-        unique_together = ('student', 'date', 'meal_type')  # ✅ No double feeding per meal per day
+        unique_together = (
+            "student",
+            "date",
+            "meal_type",
+        )  # ✅ No double feeding per meal per day
 
     def __str__(self):
         return f"{self.student.name} - {self.meal_type} on {self.date}"

@@ -1,5 +1,6 @@
+# accounts/forms.py
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User
 from django import forms
 
 
@@ -12,19 +13,9 @@ class CustomUserCreationForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = (
-            "username",
-            "email",
-            "password1",
-            "password2",
-            "is_staff",
-            "is_active",
-            "role",
-        )
+        fields = ("username", "email", "password1", "password2", "role")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # Remove help text from all fields
         for field_name in self.fields:
             self.fields[field_name].help_text = ""
