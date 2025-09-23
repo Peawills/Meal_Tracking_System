@@ -1,6 +1,6 @@
 {% extends 'students/basetemp.html' %} 
 {% block title %}Scan QR - Meal Tracker {% endblock %} 
-{% block extra_css %}
+{% block content %}
 <style>
   .scanner-container {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -244,7 +244,7 @@
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
   }
 </style>
-{% endblock %} {% block content %}
+
 <div class="container py-4">
   <div class="scanner-container position-relative overflow-hidden">
     <div class="scanner-glow glow-1"></div>
@@ -257,9 +257,7 @@
 
     <!-- ✅ Meal Type Selector -->
     <div class="meal-selector text-center">
-      <label for="meal-type" class="form-label fw-semibold mb-3"
-        >Select Meal Type:</label
-      >
+      <label for="meal-type" class="form-label fw-semibold mb-3">Select Meal Type:</label>
       <select id="meal-type" class="form-select mx-auto">
         <option value="breakfast">🍳 Breakfast</option>
         <option value="lunch">🍲 Lunch</option>
@@ -270,17 +268,11 @@
 
     <!-- ✅ Camera Selector -->
     <div class="camera-selector text-center">
-      <label for="camera-select" class="form-label fw-semibold mb-0 me-2"
-        >Camera:</label
-      >
+      <label for="camera-select" class="form-label fw-semibold mb-0 me-2">Camera:</label>
       <select id="camera-select" class="form-select me-2">
         <option value="">Loading cameras...</option>
       </select>
-      <button
-        class="camera-switch-btn"
-        id="switch-camera"
-        title="Switch camera"
-      >
+      <button class="camera-switch-btn" id="switch-camera" title="Switch camera">
         <i class="bi bi-camera-video"></i>
       </button>
     </div>
@@ -304,24 +296,19 @@
     <img id="student-photo" src="" alt="Student Photo" />
 
     <!-- ✅ Status Message -->
-    <div
-      id="status-message"
-      class="status-badge bg-primary text-white mt-3"
-    ></div>
+    <div id="status-message" class="status-badge bg-primary text-white mt-3"></div>
 
     <!-- ✅ Rescan Button -->
     <div class="text-center mt-4">
-      <button
-        id="rescan-btn"
-        onclick="restartScanner()"
-        class="btn btn-primary"
-      >
+      <button id="rescan-btn" onclick="restartScanner()" class="btn btn-primary">
         <i class="bi bi-arrow-repeat me-2"></i> Scan Another Student
       </button>
     </div>
   </div>
 </div>
-{% endblock %} {% block extra_js %}
+{% endblock %}
+
+{% block extra_js %}
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script>
   let scanner;
@@ -329,6 +316,7 @@
   let currentMealType = "breakfast";
   let cameras = [];
   let currentCameraIndex = 0;
+  let lastScannedCode = null;
 
   // ✅ Meal type change
   document.getElementById("meal-type").addEventListener("change", function () {
@@ -410,15 +398,7 @@
       .start(
         selectedCameraId,
         { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
-        (qrCodeMessage) => {
-          document.getElementById("live-output").innerHTML =
-            '<i class="bi bi-check-circle-fill me-2 text-success"></i>QR Code Scanned Successfully!';
-          document.getElementById("live-output").style.color = "#198754";
-          scanner.stop();
-
-          // ✅ Handle QR scan
-          handleScan(qrCodeMessage);
-        },
+        onScanSuccess,
         (errorMessage) => {
           // ignore continuous scan errors
         }
@@ -428,57 +408,72 @@
       });
   }
 
-  // ✅ Handle QR Scan → fetch student + mark feeding
-  function handleScan(qrCode) {
+  // ✅ Handle successful scan
+  async function onScanSuccess(decodedText) {
+    const qrCode = decodedText.trim();
+
+    // Prevent duplicate scans
+    if (!qrCode || qrCode === lastScannedCode) return;
+    lastScannedCode = qrCode;
+
+    // Stop scanner until "Next Scan"
+    scanner.stop().catch(() => {});
+
+    document.getElementById("live-output").innerHTML =
+      '<i class="bi bi-check-circle-fill me-2 text-success"></i>QR Code Scanned Successfully!';
+    document.getElementById("live-output").style.color = "#198754";
+
     // 1. Get Student Info
-    fetch(`/api/student/${qrCode}/`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Student not found");
-        return res.json();
-      })
-      .then((student) => {
-        // Show student details
-        document.getElementById("student-name").textContent = student.name;
-        document.getElementById("student-class").textContent = student.class_name;
-        document.getElementById("student-photo").src = student.photo_url || "";
+    try {
+      const res = await fetch(`/api/student/${qrCode}/`);
+      if (!res.ok) throw new Error("Student not found");
+      const student = await res.json();
 
-        document.getElementById("student-info-card").style.display = "block";
+      // Show student details
+      document.getElementById("student-name").textContent = student.name;
+      document.getElementById("student-class").textContent = student.class_name;
+      document.getElementById("student-photo").src = student.photo_url || "";
+      document.getElementById("student-info-card").style.display = "block";
 
-        // 2. Mark feeding
-        return fetch(`/api/mark-fed/${qrCode}/`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken"),
-          },
-          body: JSON.stringify({ meal_type: currentMealType }),
-        });
-      })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success") {
-          setStatus(
-            `<i class="bi bi-check-circle-fill me-2"></i>Meal recorded for ${currentMealType}`,
-            "success"
-          );
-        } else if (data.status === "already_fed") {
-          setStatus("⚠️ Student already fed for this meal today", "warning");
-        } else {
-          setStatus("❌ Error: " + (data.message || "Unknown error"), "danger");
-        }
-      })
-      .catch((err) => {
-        console.error(err);
-        setStatus("❌ Error: " + err.message, "danger");
+      // 2. Mark feeding
+      const feedRes = await fetch(`/api/mark-fed/${qrCode}/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify({ meal_type: currentMealType }),
       });
+
+      const data = await feedRes.json();
+      if (data.status === "success") {
+        setStatus(
+          `<i class="bi bi-check-circle-fill me-2"></i>Meal recorded for ${currentMealType}`,
+          "success"
+        );
+      } else if (data.status === "already_fed") {
+        setStatus("⚠️ Student already fed for this meal today", "warning");
+      } else {
+        setStatus("❌ Error: " + (data.message || "Unknown error"), "danger");
+      }
+
+      // ✅ Show "Next Scan" button
+      document.getElementById("next-scan").style.display = "inline-block";
+
+    } catch (err) {
+      console.error(err);
+      setStatus("❌ Error: " + err.message, "danger");
+    }
   }
 
-  // ✅ Restart scanner
+  // ✅ Restart scanner manually when clicking "Next Scan"
   function restartScanner() {
+    lastScannedCode = null;
     document.getElementById("student-info-card").style.display = "none";
     document.getElementById("live-output").innerHTML =
       '<i class="bi bi-info-circle me-2"></i>Waiting for QR code scan...';
     document.getElementById("live-output").style.color = "#6c757d";
+    document.getElementById("next-scan").style.display = "none";
     startScanner();
   }
 
@@ -508,9 +503,7 @@
   // ✅ Init
   document.addEventListener("DOMContentLoaded", function () {
     loadCameras();
+    document.getElementById("rescan-btn").addEventListener("click", restartScanner);
   });
 </script>
-
-
-
 {% endblock %}

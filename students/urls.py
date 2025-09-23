@@ -13,6 +13,8 @@ urlpatterns = [
     path('records/', views.feeding_records, name='feeding_records'),
     path('register-student/', views.register_student, name='register_student'),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path("feeding-records/export/", views.export_feeding_records_csv, name="export_feeding_records"),
+
 
     # ✅ Keep logout path
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
