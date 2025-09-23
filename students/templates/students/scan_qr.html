@@ -330,31 +330,23 @@
   let cameras = [];
   let currentCameraIndex = 0;
 
-  // Update meal type when selection changes
   document.getElementById("meal-type").addEventListener("change", function () {
     currentMealType = this.value;
   });
 
-  // Switch camera when button is clicked
-  document
-    .getElementById("switch-camera")
-    .addEventListener("click", switchCamera);
+  document.getElementById("switch-camera").addEventListener("click", switchCamera);
 
   function loadCameras() {
     Html5Qrcode.getCameras()
       .then((devices) => {
         if (devices.length === 0) {
-          document.getElementById("status-message").innerText =
-            "❌ No camera devices found.";
-          document.getElementById("status-message").className =
-            "status-badge bg-danger text-white";
+          setStatus("❌ No camera devices found.", "danger");
           return;
         }
 
         cameras = devices;
         populateCameraSelect(devices);
 
-        // Try to find back camera first
         let backCameraIndex = devices.findIndex(
           (device) =>
             device.label.toLowerCase().includes("back") ||
@@ -368,10 +360,7 @@
         startScanner();
       })
       .catch((err) => {
-        document.getElementById("status-message").innerText =
-          "❌ Unable to access camera: " + err;
-        document.getElementById("status-message").className =
-          "status-badge bg-danger text-white";
+        setStatus("❌ Unable to access camera: " + err, "danger");
       });
   }
 
@@ -387,7 +376,6 @@
       select.appendChild(option);
     });
 
-    // Add change event listener to select
     select.addEventListener("change", function () {
       selectedCameraId = this.value;
       currentCameraIndex = cameras.findIndex(
@@ -399,13 +387,9 @@
 
   function switchCamera() {
     if (cameras.length <= 1) return;
-
     currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
     selectedCameraId = cameras[currentCameraIndex].id;
-
-    // Update select value
     document.getElementById("camera-select").value = selectedCameraId;
-
     restartScanner();
   }
 
@@ -418,56 +402,66 @@
     scanner
       .start(
         selectedCameraId,
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
-        },
+        { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
         (qrCodeMessage) => {
           document.getElementById("live-output").innerHTML =
             '<i class="bi bi-check-circle-fill me-2 text-success"></i>QR Code Scanned Successfully!';
           document.getElementById("live-output").style.color = "#198754";
           scanner.stop();
-          showStudentInfo(qrCodeMessage);
+
+          // ✅ Fetch student info + mark feeding
+          handleScan(qrCodeMessage);
         },
-        (errorMessage) => {
-          // Optional: Keep quiet on continuous errors
-        }
+        (errorMessage) => {}
       )
       .catch((err) => {
-        document.getElementById("status-message").innerText =
-          "❌ Camera error: " + err;
-        document.getElementById("status-message").className =
-          "status-badge bg-danger text-white";
+        setStatus("❌ Camera error: " + err, "danger");
       });
   }
 
-  function showStudentInfo(qrData) {
-    // In a real application, you would fetch this data from your server
-    // For demonstration, we'll use mock data
-    const mockData = {
-      id: qrData,
-      name: "Student Name",
-      class: "Grade 10 - Section A",
-      photo: "https://via.placeholder.com/150?text=Student+Photo",
-    };
+  // ✅ Handle QR Scan
+  function handleScan(qrCode) {
+    // 1. Get Student Info
+    fetch(`/get_student_by_qr/${qrCode}/`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Student not found");
+        return res.json();
+      })
+      .then((student) => {
+        // Show student details
+        document.getElementById("student-name").textContent = student.name;
+        document.getElementById("student-class").textContent = student.class_name;
+        document.getElementById("student-photo").src = student.photo_url || "";
 
-    document.getElementById("student-name").textContent = mockData.name;
-    document.getElementById("student-class").textContent = mockData.class;
-    document.getElementById("student-photo").src = mockData.photo;
+        document.getElementById("student-info-card").style.display = "block";
 
-    // Show the student info card
-    document.getElementById("student-info-card").style.display = "block";
-
-    // Show success message
-    document.getElementById(
-      "status-message"
-    ).innerHTML = `<i class="bi bi-check-circle-fill me-2"></i>Meal recorded for ${currentMealType}`;
-    document.getElementById("status-message").className =
-      "status-badge bg-success text-white";
-
-    // In a real application, you would send this data to your server here
-    console.log(`Meal type: ${currentMealType}, Student ID: ${qrData}`);
+        // 2. Mark feeding
+        return fetch(`/mark_student_as_fed/${qrCode}/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: JSON.stringify({ meal_type: currentMealType }),
+        });
+      })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status === "success") {
+          setStatus(
+            `<i class="bi bi-check-circle-fill me-2"></i>Meal recorded for ${currentMealType}`,
+            "success"
+          );
+        } else if (data.status === "already_fed") {
+          setStatus("⚠️ Student already fed for this meal today", "warning");
+        } else {
+          setStatus("❌ Error: " + (data.message || "Unknown error"), "danger");
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setStatus("❌ Error: " + err.message, "danger");
+      });
   }
 
   function restartScanner() {
@@ -478,9 +472,31 @@
     startScanner();
   }
 
-  // Initialize on page load
+  function setStatus(message, type) {
+    const status = document.getElementById("status-message");
+    status.innerHTML = message;
+    status.className = `status-badge bg-${type} text-white`;
+  }
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === name + "=") {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     loadCameras();
   });
 </script>
+
+
 {% endblock %}
