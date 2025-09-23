@@ -144,47 +144,74 @@
 {% block extra_js %}
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script>
-  let scanner, selectedCameraId, currentMealType = "breakfast";
-  let cameras = [], currentCameraIndex = 0, lastScannedCode = null;
+  let scanner;
+  let selectedCameraId;
+  let currentMealType = "breakfast";
+  let cameras = [];
+  let currentCameraIndex = 0;
+  let lastScannedCode = null;
 
   // ✅ Meal type change
-  document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("meal-type").addEventListener("change", e => {
-      currentMealType = e.target.value;
-    });
-    loadCameras();
+  document.getElementById("meal-type").addEventListener("change", function () {
+    currentMealType = this.value;
   });
 
+  // ✅ Switch camera button
+  document.getElementById("switch-camera").addEventListener("click", switchCamera);
+
+  // ✅ Load cameras
   function loadCameras() {
-    Html5Qrcode.getCameras().then(devices => {
-      if (!devices.length) { setStatus("❌ No camera devices found.", "danger"); return; }
-      cameras = devices;
-      populateCameraSelect(devices);
-      let backCam = devices.findIndex(d => d.label.toLowerCase().includes("back"));
-      if (backCam === -1) backCam = 0;
-      selectedCameraId = devices[backCam].id;
-      currentCameraIndex = backCam;
-      startScanner();
-    }).catch(err => setStatus("❌ Unable to access camera: " + err, "danger"));
+    Html5Qrcode.getCameras()
+      .then((devices) => {
+        if (devices.length === 0) {
+          setStatus("❌ No camera devices found.", "danger");
+          return;
+        }
+
+        cameras = devices;
+        populateCameraSelect(devices);
+
+        // Prefer back camera
+        let backCameraIndex = devices.findIndex(
+          (device) =>
+            device.label.toLowerCase().includes("back") ||
+            device.label.toLowerCase().includes("rear")
+        );
+
+        if (backCameraIndex === -1) backCameraIndex = 0;
+
+        selectedCameraId = devices[backCameraIndex].id;
+        currentCameraIndex = backCameraIndex;
+        startScanner();
+      })
+      .catch((err) => {
+        setStatus("❌ Unable to access camera: " + err, "danger");
+      });
   }
 
+  // ✅ Populate camera dropdown
   function populateCameraSelect(devices) {
     const select = document.getElementById("camera-select");
     select.innerHTML = "";
-    devices.forEach((d, i) => {
-      const opt = document.createElement("option");
-      opt.value = d.id; opt.text = d.label || `Camera ${i+1}`;
-      opt.selected = i === currentCameraIndex;
-      select.appendChild(opt);
+
+    devices.forEach((device, index) => {
+      const option = document.createElement("option");
+      option.value = device.id;
+      option.text = device.label || `Camera ${index + 1}`;
+      option.selected = index === currentCameraIndex;
+      select.appendChild(option);
     });
-    select.addEventListener("change", function() {
+
+    select.addEventListener("change", function () {
       selectedCameraId = this.value;
-      currentCameraIndex = cameras.findIndex(c => c.id === selectedCameraId);
+      currentCameraIndex = cameras.findIndex(
+        (cam) => cam.id === selectedCameraId
+      );
       restartScanner();
     });
-    document.getElementById("switch-camera").addEventListener("click", switchCamera);
   }
 
+  // ✅ Switch camera
   function switchCamera() {
     if (cameras.length <= 1) return;
     currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
@@ -193,65 +220,128 @@
     restartScanner();
   }
 
+  // ✅ Start scanner
   function startScanner() {
-    if (scanner) scanner.stop().catch(()=>{});
+    if (scanner) {
+      scanner.stop()
+        .then(() => scanner.clear())
+        .catch(() => {});
+    }
+
     scanner = new Html5Qrcode("reader");
-    scanner.start(selectedCameraId, { fps:10, qrbox:{width:250, height:250}}, onScanSuccess);
+    scanner
+      .start(
+        selectedCameraId,
+        { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+        onScanSuccess,
+        (errorMessage) => {
+          // ignore continuous scan errors
+        }
+      )
+      .catch((err) => {
+        setStatus("❌ Camera error: " + err, "danger");
+      });
   }
 
+  // ✅ Handle successful scan
   async function onScanSuccess(decodedText) {
     const qrCode = decodedText.trim();
+
     if (!qrCode || qrCode === lastScannedCode) return;
     lastScannedCode = qrCode;
-    scanner.stop().catch(()=>{});
-    document.getElementById("live-output").innerHTML = "✅ QR Code Scanned Successfully!";
+
+    // Fully stop and clear scanner
+    scanner.stop()
+      .then(() => scanner.clear())
+      .catch(() => {});
+
+    document.getElementById("live-output").innerHTML =
+      '<i class="bi bi-check-circle-fill me-2 text-success"></i>QR Code Scanned Successfully!';
+    document.getElementById("live-output").style.color = "#198754";
 
     try {
+      // 1. Get Student Info
       const res = await fetch(`/api/student/${qrCode}/`);
       if (!res.ok) throw new Error("Student not found");
       const student = await res.json();
+
+      // Show student details
       document.getElementById("student-name").textContent = student.name;
       document.getElementById("student-class").textContent = student.class_name;
       document.getElementById("student-photo").src = student.photo_url || "";
       document.getElementById("student-info-card").style.display = "block";
 
+      // 2. Mark feeding
       const feedRes = await fetch(`/api/mark-fed/${qrCode}/`, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json", "X-CSRFToken":getCookie("csrftoken")},
-        body:JSON.stringify({ meal_type: currentMealType })
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify({ meal_type: currentMealType }),
       });
-      const data = await feedRes.json();
-      if (data.status === "success") setStatus("✅ Meal recorded for "+currentMealType,"success");
-      else if (data.status === "already_fed") setStatus("⚠️ Student already fed today","warning");
-      else setStatus("❌ Error: " + (data.message||"Unknown"),"danger");
 
-      document.getElementById("rescan-btn").style.display="inline-block";
-    } catch(err) { setStatus("❌ Error: " + err.message,"danger"); }
+      const data = await feedRes.json();
+      if (data.status === "success") {
+        setStatus(
+          `<i class="bi bi-check-circle-fill me-2"></i>Meal recorded for ${currentMealType}`,
+          "success"
+        );
+      } else if (data.status === "already_fed") {
+        setStatus("⚠️ Student already fed for this meal today", "warning");
+      } else {
+        setStatus("❌ Error: " + (data.message || "Unknown error"), "danger");
+      }
+
+      // ✅ Show "Next Scan" button
+      document.getElementById("rescan-btn").style.display = "inline-block";
+    } catch (err) {
+      console.error(err);
+      setStatus("❌ Error: " + err.message, "danger");
+    }
   }
 
+  // ✅ Restart scanner
   function restartScanner() {
     lastScannedCode = null;
-    document.getElementById("student-info-card").style.display="none";
-    document.getElementById("rescan-btn").style.display="none";
-    document.getElementById("live-output").innerHTML="⏳ Waiting for QR code scan...";
-    startScanner();
+    document.getElementById("student-info-card").style.display = "none";
+    document.getElementById("live-output").innerHTML =
+      '<i class="bi bi-info-circle me-2"></i>Waiting for QR code scan...';
+    document.getElementById("live-output").style.color = "#6c757d";
+    document.getElementById("rescan-btn").style.display = "none";
+
+    startScanner(); // Fresh start
   }
 
-  function setStatus(msg,type) {
-    const el=document.getElementById("status-message");
-    el.innerHTML=msg; el.className=`status-badge bg-${type} text-white`;
+  // ✅ Status message helper
+  function setStatus(message, type) {
+    const status = document.getElementById("status-message");
+    status.innerHTML = message;
+    status.className = `status-badge bg-${type} text-white`;
   }
 
+  // ✅ Get CSRF token
   function getCookie(name) {
-    let cookieValue=null;
-    if (document.cookie && document.cookie!=="") {
-      const cookies=document.cookie.split(";");
-      for (let c of cookies) {
-        c=c.trim();
-        if (c.startsWith(name+"=")) { cookieValue=decodeURIComponent(c.substring(name.length+1)); break; }
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === name + "=") {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
       }
     }
     return cookieValue;
   }
+
+  // ✅ Init
+  document.addEventListener("DOMContentLoaded", function () {
+    loadCameras();
+    document.getElementById("rescan-btn").addEventListener("click", restartScanner);
+  });
 </script>
+
+
 {% endblock extra_js %}
