@@ -307,8 +307,8 @@
   </div>
 </div>
 {% endblock %}
+{ % block extra_js %} 
 
-{% block extra_js %}
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script>
   let scanner;
@@ -473,7 +473,7 @@
     document.getElementById("live-output").innerHTML =
       '<i class="bi bi-info-circle me-2"></i>Waiting for QR code scan...';
     document.getElementById("live-output").style.color = "#6c757d";
-    document.getElementById("next-scan").style.display = "none";
+    document.getElementById("rescan-btn").style.display = "none";  // ✅ fixed
     startScanner();
   }
 
