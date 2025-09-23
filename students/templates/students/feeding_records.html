@@ -37,12 +37,11 @@
   <div class="col-md-auto">
     <button type="submit" class="btn btn-primary">🔍 Filter</button>
     {% if records %}
-      <a href="?{% if selected_class %}class={{ selected_class }}&{% endif %}
-              {% if search_query %}search={{ search_query }}&{% endif %}
-              {% if start_date %}start_date={{ start_date }}&end_date={{ end_date }}&{% endif %}
-              export=csv" class="btn btn-success">
-        ⬇️ Export CSV
-      </a>
+   <a href="?class={{ selected_class }}&search={{ search_query }}&start_date={{ start_date }}&end_date={{ end_date }}&export=csv" 
+   class="btn btn-success">
+  ⬇️ Export CSV
+</a>
+
     {% endif %}
   </div>
 </form>
@@ -62,10 +61,10 @@
     {% for record in records %}
       <tr>
         <td>{{ record.student.name }}</td>
-        <td>{{ record.student.class_name }}</td>
-        <td>{{ record.meal_type|title }}</td>
-        <td>{{ record.date }}</td>
-        <td>{{ record.timestamp|time:"H:i:s" }}</td>
+        <td>{{ record.class_name }}</td>
+        <td>{{ record.get_meal_type_display }}</td>
+        <td>{{ record.date|date:"Y-m-d" }}</td>
+        <td>{{ record.time|time:"H:i:s" }}</td>
       </tr>
     {% empty %}
       <tr>
