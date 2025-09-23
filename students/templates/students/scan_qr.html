@@ -330,12 +330,15 @@
   let cameras = [];
   let currentCameraIndex = 0;
 
+  // ✅ Meal type change
   document.getElementById("meal-type").addEventListener("change", function () {
     currentMealType = this.value;
   });
 
+  // ✅ Switch camera button
   document.getElementById("switch-camera").addEventListener("click", switchCamera);
 
+  // ✅ Load cameras
   function loadCameras() {
     Html5Qrcode.getCameras()
       .then((devices) => {
@@ -347,6 +350,7 @@
         cameras = devices;
         populateCameraSelect(devices);
 
+        // Prefer back camera
         let backCameraIndex = devices.findIndex(
           (device) =>
             device.label.toLowerCase().includes("back") ||
@@ -364,6 +368,7 @@
       });
   }
 
+  // ✅ Populate camera dropdown
   function populateCameraSelect(devices) {
     const select = document.getElementById("camera-select");
     select.innerHTML = "";
@@ -385,6 +390,7 @@
     });
   }
 
+  // ✅ Switch camera
   function switchCamera() {
     if (cameras.length <= 1) return;
     currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
@@ -393,6 +399,7 @@
     restartScanner();
   }
 
+  // ✅ Start scanner
   function startScanner() {
     if (scanner) {
       scanner.stop().catch(() => {});
@@ -409,20 +416,22 @@
           document.getElementById("live-output").style.color = "#198754";
           scanner.stop();
 
-          // ✅ Fetch student info + mark feeding
+          // ✅ Handle QR scan
           handleScan(qrCodeMessage);
         },
-        (errorMessage) => {}
+        (errorMessage) => {
+          // ignore continuous scan errors
+        }
       )
       .catch((err) => {
         setStatus("❌ Camera error: " + err, "danger");
       });
   }
 
-  // ✅ Handle QR Scan
+  // ✅ Handle QR Scan → fetch student + mark feeding
   function handleScan(qrCode) {
     // 1. Get Student Info
-    fetch(`/get_student_by_qr/${qrCode}/`)
+    fetch(`/api/student/${qrCode}/`)
       .then((res) => {
         if (!res.ok) throw new Error("Student not found");
         return res.json();
@@ -436,7 +445,7 @@
         document.getElementById("student-info-card").style.display = "block";
 
         // 2. Mark feeding
-        return fetch(`/mark_student_as_fed/${qrCode}/`, {
+        return fetch(`/api/mark-fed/${qrCode}/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -464,6 +473,7 @@
       });
   }
 
+  // ✅ Restart scanner
   function restartScanner() {
     document.getElementById("student-info-card").style.display = "none";
     document.getElementById("live-output").innerHTML =
@@ -472,12 +482,14 @@
     startScanner();
   }
 
+  // ✅ Status message helper
   function setStatus(message, type) {
     const status = document.getElementById("status-message");
     status.innerHTML = message;
     status.className = `status-badge bg-${type} text-white`;
   }
 
+  // ✅ Get CSRF token
   function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== "") {
@@ -493,10 +505,12 @@
     return cookieValue;
   }
 
+  // ✅ Init
   document.addEventListener("DOMContentLoaded", function () {
     loadCameras();
   });
 </script>
+
 
 
 {% endblock %}
