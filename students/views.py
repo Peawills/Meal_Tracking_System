@@ -8,6 +8,13 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from .models import Student, FeedingRecord
 from .forms import StudentForm
 from django.db.models import Q
+from datetime import datetime
+
+# PDF tools
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
 
 
 def is_admin(user):
@@ -86,10 +93,13 @@ def print_qr_cards(request):
 def feeding_records(request):
     class_filter = request.GET.get("class")
     search_query = request.GET.get("search")
+    meal_filter = request.GET.get("meal_type")
+    selected_date = request.GET.get("date")
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
     export = request.GET.get("export")
 
+    # ✅ Base queryset
     records = FeedingRecord.objects.select_related("student").order_by("-date", "-time")
 
     # ✅ Filter by class
@@ -103,13 +113,23 @@ def feeding_records(request):
             | Q(student__admission_number__icontains=search_query)
         )
 
+    # ✅ Filter by meal type
+    if meal_filter:
+        records = records.filter(meal_type=meal_filter)
+
     # ✅ Date filtering
+    use_date_range = False
     if start_date and end_date:
         records = records.filter(date__range=[start_date, end_date])
+        use_date_range = True
     elif start_date:
         records = records.filter(date__gte=start_date)
+        use_date_range = True
     elif end_date:
         records = records.filter(date__lte=end_date)
+        use_date_range = True
+    elif selected_date:
+        records = records.filter(date=selected_date)
 
     # ✅ CSV Export
     if export == "csv":
@@ -117,24 +137,70 @@ def feeding_records(request):
         response["Content-Disposition"] = 'attachment; filename="meal_records.csv"'
 
         writer = csv.writer(response)
-        writer.writerow(
-            ["Student", "Admission Number", "Class", "Meal", "Date", "Time"]
-        )
+        writer.writerow(["Student", "Admission Number", "Class", "Meal", "Date", "Time"])
 
         for record in records:
-            writer.writerow(
-                [
-                    record.student.name,
-                    record.student.admission_number,
-                    record.student.class_name,
-                    record.get_meal_type_display(),  # ✅ Human readable
-                    record.date.strftime("%Y-%m-%d"),
-                    record.time.strftime("%H:%M:%S"),
-                ]
-            )
+            writer.writerow([
+                record.student.name,
+                record.student.admission_number,
+                record.student.class_name,
+                record.get_meal_type_display(),
+                record.date.strftime("%Y-%m-%d"),
+                record.time.strftime("%H:%M:%S"),
+            ])
         return response
 
-    # ✅ Get list of distinct classes for dropdown
+    # ✅ PDF Export
+    if export == "pdf":
+        response = HttpResponse(content_type="application/pdf")
+        response["Content-Disposition"] = 'attachment; filename="meal_records.pdf"'
+
+        doc = SimpleDocTemplate(response, pagesize=landscape(A4))
+        elements = []
+        styles = getSampleStyleSheet()
+
+        # Title
+        elements.append(Paragraph("Meal Attendance Records", styles["Title"]))
+        elements.append(Paragraph(datetime.now().strftime("%B %d, %Y %H:%M"), styles["Normal"]))
+        elements.append(Paragraph(" ", styles["Normal"]))
+
+        # Table data
+        data = [["Student", "Admission Number", "Class", "Meal", "Date", "Time"]]
+        for record in records:
+            data.append([
+                record.student.name,
+                record.student.admission_number,
+                record.student.class_name,
+                record.get_meal_type_display(),
+                record.date.strftime("%Y-%m-%d"),
+                record.time.strftime("%H:%M:%S"),
+            ])
+
+        # Create table
+        table = Table(data, repeatRows=1)
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#667eea")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+            ("BACKGROUND", (0, 1), (-1, -1), colors.whitesmoke),
+            ("GRID", (0, 0), (-1, -1), 1, colors.grey),
+        ]))
+
+        elements.append(table)
+        doc.build(elements)
+        return response
+
+    # ✅ Stats
+    show_stats = True
+    total_records = records.count()
+    unique_students = records.values("student_id").distinct().count()
+    breakfast_count = records.filter(meal_type="breakfast").count()
+    lunch_count = records.filter(meal_type="lunch").count()
+    dinner_count = records.filter(meal_type="dinner").count()
+
+    # ✅ Get distinct classes for dropdown
     classes = Student.objects.values_list("class_name", flat=True).distinct()
 
     return render(
@@ -144,9 +210,18 @@ def feeding_records(request):
             "records": records,
             "classes": classes,
             "selected_class": class_filter,
+            "selected_meal": meal_filter,
             "search_query": search_query,
+            "selected_date": selected_date,
             "start_date": start_date,
             "end_date": end_date,
+            "use_date_range": use_date_range,
+            "show_stats": show_stats,
+            "total_records": total_records,
+            "unique_students": unique_students,
+            "breakfast_count": breakfast_count,
+            "lunch_count": lunch_count,
+            "dinner_count": dinner_count,
         },
     )
 
