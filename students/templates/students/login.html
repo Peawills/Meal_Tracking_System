@@ -1,39 +1,299 @@
 {% extends 'students/basetemp.html' %}
-{% load widget_tweaks %}  <!-- ✅ Must be at the top -->
+{% load widget_tweaks %}
 
 {% block title %}Login | Meal Tracker{% endblock %}
 
 {% block content %}
-<body class="bg-light d-flex align-items-center" style="height: 100vh;">
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-5 col-lg-4">
-            <div class="card shadow-sm">
-                <div class="card-body p-4">
-                    <h3 class="text-center mb-4">🍽️ Meal Tracker Login</h3>
+<style>
+  .login-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem 0;
+  }
 
-                    {% if form.errors %}
-                        <div class="alert alert-danger text-center">Invalid username or password.</div>
-                    {% endif %}
+  .login-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    max-width: 450px;
+    width: 100%;
+    margin: 0 1rem;
+  }
 
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            {{ form.username.label_tag }}
-                            {{ form.username|add_class:"form-control" }}
-                        </div>
+  .login-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    text-align: center;
+  }
 
-                        <div class="mb-3">
-                            {{ form.password.label_tag }}
-                            {{ form.password|add_class:"form-control" }}
-                        </div>
+  .login-header h3 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.75rem;
+  }
 
-                        <button type="submit" class="btn btn-primary w-100">Login</button>
-                    </form>
-                </div>
-            </div>
-        </div>
+  .login-header p {
+    margin: 0.5rem 0 0;
+    opacity: 0.95;
+    font-size: 0.95rem;
+  }
+
+  .login-body {
+    padding: 2rem;
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-control {
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  }
+
+  .form-control.is-invalid {
+    border-color: #dc3545;
+  }
+
+  .btn-login {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 10px;
+    padding: 0.875rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: white;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+  }
+
+  .btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+  }
+
+  .btn-login:active {
+    transform: translateY(0);
+  }
+
+  .alert {
+    border-radius: 10px;
+    border: none;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+
+  .password-toggle {
+    position: relative;
+  }
+
+  .password-toggle-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    font-size: 1.2rem;
+    z-index: 10;
+  }
+
+  .password-toggle-btn:hover {
+    color: #495057;
+  }
+
+  .login-footer {
+    text-align: center;
+    padding: 1.5rem 2rem;
+    background: #f8f9fa;
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+
+  .icon-large {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  @media (max-width: 576px) {
+    .login-card {
+      margin: 0 0.5rem;
+    }
+
+    .login-header h3 {
+      font-size: 1.5rem;
+    }
+
+    .login-body {
+      padding: 1.5rem;
+    }
+  }
+</style>
+
+<div class="login-wrapper">
+  <div class="login-card">
+    <!-- Header -->
+    <div class="login-header">
+      <div class="icon-large">🍽️</div>
+      <h3>Meal Tracker</h3>
+      <p>Sign in to your account</p>
     </div>
+
+    <!-- Body -->
+    <div class="login-body">
+      {% if form.errors %}
+        <div class="alert alert-danger" role="alert">
+          <i class="bi bi-exclamation-circle-fill me-2"></i>
+          <strong>Login Failed!</strong> Invalid username or password. Please try again.
+        </div>
+      {% endif %}
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }}" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" id="login-form" novalidate>
+        {% csrf_token %}
+
+        <!-- Username Field -->
+        <div class="mb-3">
+          <label for="{{ form.username.id_for_label }}" class="form-label">
+            <i class="bi bi-person-fill me-1"></i>Username
+          </label>
+          {{ form.username|add_class:"form-control"|attr:"placeholder:Enter your username"|attr:"autocomplete:username"|attr:"required:required" }}
+          {% if form.username.errors %}
+            <div class="invalid-feedback d-block">
+              {{ form.username.errors.0 }}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Password Field -->
+        <div class="mb-3">
+          <label for="{{ form.password.id_for_label }}" class="form-label">
+            <i class="bi bi-lock-fill me-1"></i>Password
+          </label>
+          <div class="password-toggle">
+            {{ form.password|add_class:"form-control"|attr:"placeholder:Enter your password"|attr:"autocomplete:current-password"|attr:"required:required" }}
+            <button type="button" class="password-toggle-btn" id="toggle-password" tabindex="-1">
+              <i class="bi bi-eye" id="toggle-icon"></i>
+            </button>
+          </div>
+          {% if form.password.errors %}
+            <div class="invalid-feedback d-block">
+              {{ form.password.errors.0 }}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-login w-100">
+          <i class="bi bi-box-arrow-in-right me-2"></i>Login
+        </button>
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <div class="login-footer">
+      <small>&copy; 2025 Meal Tracker System. All rights reserved.</small>
+    </div>
+  </div>
 </div>
-</body>
+
+<script>
+  // Password toggle functionality
+  document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('toggle-password');
+    const passwordField = document.getElementById('{{ form.password.id_for_label }}');
+    const toggleIcon = document.getElementById('toggle-icon');
+
+    if (toggleBtn && passwordField && toggleIcon) {
+      toggleBtn.addEventListener('click', function() {
+        const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordField.setAttribute('type', type);
+        
+        // Toggle icon
+        if (type === 'password') {
+          toggleIcon.classList.remove('bi-eye-slash');
+          toggleIcon.classList.add('bi-eye');
+        } else {
+          toggleIcon.classList.remove('bi-eye');
+          toggleIcon.classList.add('bi-eye-slash');
+        }
+      });
+    }
+
+    // Form validation
+    const form = document.getElementById('login-form');
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        const username = document.getElementById('{{ form.username.id_for_label }}');
+        const password = document.getElementById('{{ form.password.id_for_label }}');
+        
+        let isValid = true;
+
+        // Username validation
+        if (username && !username.value.trim()) {
+          username.classList.add('is-invalid');
+          isValid = false;
+        } else if (username) {
+          username.classList.remove('is-invalid');
+        }
+
+        // Password validation
+        if (password && !password.value) {
+          password.classList.add('is-invalid');
+          isValid = false;
+        } else if (password) {
+          password.classList.remove('is-invalid');
+        }
+
+        if (!isValid) {
+          e.preventDefault();
+        }
+      });
+
+      // Remove invalid class on input
+      const inputs = form.querySelectorAll('.form-control');
+      inputs.forEach(input => {
+        input.addEventListener('input', function() {
+          this.classList.remove('is-invalid');
+        });
+      });
+    }
+
+    // Auto-focus username field
+    const usernameField = document.getElementById('{{ form.username.id_for_label }}');
+    if (usernameField) {
+      usernameField.focus();
+    }
+  });
+</script>
 {% endblock %}
