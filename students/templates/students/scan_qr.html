@@ -1,7 +1,5 @@
-{% extends 'students/basetemp.html' %}
-
-{% block title %}Scan QR - Meal Tracker{% endblock title %}
-
+{% extends 'students/basetemp.html' %} 
+{% block title %}Scan QR - Meal Tracker{% endblock title %} 
 {% block content %}
 <style>
   /* === Scanner Styles === */
@@ -25,14 +23,18 @@
   }
   .scan-guide {
     position: absolute;
-    top: 50%; left: 50%;
+    top: 50%;
+    left: 50%;
     transform: translate(-50%, -50%);
-    width: 70%; height: 70%;
+    width: 70%;
+    height: 70%;
     border: 2px dashed rgba(255, 255, 255, 0.7);
     border-radius: 12px;
     pointer-events: none;
     z-index: 10;
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .scan-guide::before {
     content: "Position QR code here";
@@ -40,20 +42,27 @@
     bottom: -40px;
     left: 50%;
     transform: translateX(-50%);
-    color: white; font-weight: 500;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    color: white;
+    font-weight: 500;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   }
   .scan-animation {
     position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 4px;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
     background: linear-gradient(90deg, transparent, #4361ee, transparent);
     animation: scanLine 2s infinite linear;
     border-radius: 4px;
   }
   @keyframes scanLine {
-    0% { top: 0; }
-    100% { top: 100%; }
+    0% {
+      top: 0;
+    }
+    100% {
+      top: 100%;
+    }
   }
   #live-output {
     background: white;
@@ -61,19 +70,20 @@
     border-radius: 30px;
     margin: 20px auto;
     max-width: 400px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
     font-weight: 600;
   }
   #student-info-card {
     background: white;
     border-radius: 20px;
     padding: 2rem;
-    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
     margin-top: 2rem;
     display: none;
   }
   #student-photo {
-    width: 150px; height: 150px;
+    width: 150px;
+    height: 150px;
     object-fit: cover;
     border-radius: 50%;
     border: 4px solid #e0e7ff;
@@ -92,8 +102,14 @@
 
     <!-- ✅ Meal Type Selector -->
     <div class="meal-selector text-center mb-3">
-      <label for="meal-type" class="form-label fw-semibold mb-2">Select Meal Type:</label>
-      <select id="meal-type" class="form-select mx-auto" style="max-width:250px;">
+      <label for="meal-type" class="form-label fw-semibold mb-2"
+        >Select Meal Type:</label
+      >
+      <select
+        id="meal-type"
+        class="form-select mx-auto"
+        style="max-width: 250px"
+      >
         <option value="breakfast">🍳 Breakfast</option>
         <option value="lunch">🍲 Lunch</option>
         <option value="dinner">🍛 Dinner</option>
@@ -103,11 +119,21 @@
 
     <!-- ✅ Camera Selector -->
     <div class="camera-selector text-center mb-3">
-      <label for="camera-select" class="form-label fw-semibold mb-0 me-2">Camera:</label>
-      <select id="camera-select" class="form-select me-2" style="max-width:250px;">
+      <label for="camera-select" class="form-label fw-semibold mb-0 me-2"
+        >Camera:</label
+      >
+      <select
+        id="camera-select"
+        class="form-select me-2"
+        style="max-width: 250px"
+      >
         <option value="">Loading cameras...</option>
       </select>
-      <button class="btn btn-outline-primary btn-sm" id="switch-camera" title="Switch camera">
+      <button
+        class="btn btn-outline-primary btn-sm"
+        id="switch-camera"
+        title="Switch camera"
+      >
         <i class="bi bi-camera-video"></i>
       </button>
     </div>
@@ -128,20 +154,26 @@
   <div id="student-info-card" class="text-center">
     <h4 id="student-name" class="mb-2 text-primary"></h4>
     <p id="student-class" class="text-muted mb-3"></p>
-    <img id="student-photo" src="" alt="Student Photo">
+    <img id="student-photo" src="" alt="Student Photo" />
 
-    <div id="status-message" class="status-badge bg-primary text-white mt-3"></div>
+    <div
+      id="status-message"
+      class="status-badge bg-primary text-white mt-3"
+    ></div>
 
     <div class="text-center mt-4">
-      <button id="rescan-btn" onclick="restartScanner()" class="btn btn-primary" style="display:none;">
+      <button
+        id="rescan-btn"
+        onclick="restartScanner()"
+        class="btn btn-primary"
+        style="display: none"
+      >
         <i class="bi bi-arrow-repeat me-2"></i> Scan Another Student
       </button>
     </div>
   </div>
 </div>
-{% endblock content %}
-
-{% block extra_js %}
+{% endblock content %} {% block extra_js %}
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script>
   let scanner;
@@ -157,7 +189,9 @@
   });
 
   // ✅ Switch camera button
-  document.getElementById("switch-camera").addEventListener("click", switchCamera);
+  document
+    .getElementById("switch-camera")
+    .addEventListener("click", switchCamera);
 
   // ✅ Load cameras
   function loadCameras() {
@@ -212,22 +246,16 @@
   }
 
   // ✅ Switch camera
-  function switchCamera() {
+  async function switchCamera() {
     if (cameras.length <= 1) return;
     currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
     selectedCameraId = cameras[currentCameraIndex].id;
     document.getElementById("camera-select").value = selectedCameraId;
-    restartScanner();
+    await restartScanner();
   }
 
   // ✅ Start scanner
   function startScanner() {
-    if (scanner) {
-      scanner.stop()
-        .then(() => scanner.clear())
-        .catch(() => {});
-    }
-
     scanner = new Html5Qrcode("reader");
     scanner
       .start(
@@ -251,9 +279,12 @@
     lastScannedCode = qrCode;
 
     // Fully stop and clear scanner
-    scanner.stop()
-      .then(() => scanner.clear())
-      .catch(() => {});
+    try {
+      await scanner.stop();
+      await scanner.clear();
+    } catch (err) {
+      console.log("Error stopping scanner:", err);
+    }
 
     document.getElementById("live-output").innerHTML =
       '<i class="bi bi-check-circle-fill me-2 text-success"></i>QR Code Scanned Successfully!';
@@ -301,8 +332,8 @@
     }
   }
 
-  // ✅ Restart scanner
-  function restartScanner() {
+  // ✅ Restart scanner (FIXED)
+  async function restartScanner() {
     lastScannedCode = null;
     document.getElementById("student-info-card").style.display = "none";
     document.getElementById("live-output").innerHTML =
@@ -310,7 +341,20 @@
     document.getElementById("live-output").style.color = "#6c757d";
     document.getElementById("rescan-btn").style.display = "none";
 
-    startScanner(); // Fresh start
+    // ✅ Properly stop and clear before restarting
+    if (scanner) {
+      try {
+        await scanner.stop();
+        await scanner.clear();
+      } catch (err) {
+        console.log("Scanner cleanup error:", err);
+      }
+    }
+
+    // Small delay to ensure camera is released
+    setTimeout(() => {
+      startScanner();
+    }, 100);
   }
 
   // ✅ Status message helper
@@ -339,9 +383,10 @@
   // ✅ Init
   document.addEventListener("DOMContentLoaded", function () {
     loadCameras();
-    document.getElementById("rescan-btn").addEventListener("click", restartScanner);
+    document
+      .getElementById("rescan-btn")
+      .addEventListener("click", restartScanner);
   });
 </script>
-
 
 {% endblock extra_js %}
