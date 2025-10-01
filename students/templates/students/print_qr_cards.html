@@ -374,31 +374,41 @@
       display: none !important;
     }
     
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+    
     body {
-      background: white;
-      padding: 0;
-      margin: 0;
+      background: white !important;
+      padding: 0 !important;
+      margin: 0 !important;
     }
     
     .container {
       max-width: 100% !important;
-      padding: 0 !important;
+      padding: 15px !important;
       margin: 0 !important;
     }
     
     .card-wrapper {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      padding: 10px;
+      gap: 15px;
+      padding: 0;
+      margin-top: 20px !important;
     }
     
     .student-card {
       box-shadow: none;
-      border: 1px solid #ddd;
+      border: 1px solid #ddd !important;
       page-break-inside: avoid;
       break-inside: avoid;
-      padding: 10px;
+      padding: 12px !important;
+      margin: 0;
+      position: relative;
+      overflow: visible !important;
     }
 
     .student-card::before {
@@ -410,37 +420,52 @@
     }
 
     .student-photo {
-      width: 80px;
-      height: 80px;
-      border-width: 2px;
+      width: 85px !important;
+      height: 85px !important;
+      border-width: 2px !important;
+      margin: 0 auto 10px !important;
+      display: block !important;
     }
 
     .photo-placeholder {
-      width: 80px;
-      height: 80px;
+      width: 85px !important;
+      height: 85px !important;
+      margin: 0 auto 10px !important;
+      display: flex !important;
     }
 
     .qr-code {
-      width: 110px;
-      height: 110px;
-      padding: 5px;
+      width: 115px !important;
+      height: 115px !important;
+      padding: 5px !important;
+      margin: 10px auto !important;
+      display: block !important;
     }
 
     .qr-placeholder {
-      width: 110px;
-      height: 110px;
+      width: 115px !important;
+      height: 115px !important;
+      margin: 10px auto !important;
+      display: flex !important;
     }
 
     .student-name {
-      font-size: 0.9rem;
+      font-size: 0.9rem !important;
+      margin: 8px 0 5px !important;
     }
 
-    .student-class, .student-id {
-      font-size: 0.75rem;
+    .student-class {
+      font-size: 0.8rem !important;
+      margin-bottom: 5px !important;
+    }
+    
+    .student-id {
+      font-size: 0.75rem !important;
+      padding: 3px 10px !important;
     }
     
     @page {
-      margin: 0.5cm;
+      margin: 1cm 0.8cm;
       size: A4 landscape;
     }
   }
