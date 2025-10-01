@@ -4,58 +4,112 @@
 {% block extra_css %}
 <style>
   :root {
-    --primary: #4361ee;
-    --secondary: #f8f9fa;
-    --accent: #3a0ca3;
+    --primary: #667eea;
+    --secondary: #764ba2;
+    --accent: #4361ee;
     --light: #ffffff;
     --dark: #2b2d42;
-    --success: #4cc9f0;
-    --warning: #f72585;
-    --info: #7209b7;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --info: #06b6d4;
     --border-radius: 16px;
     --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
     --transition: all 0.3s ease;
   }
   
+  body {
+    background: #f8f9fa;
+  }
+
   .page-header {
-    background: linear-gradient(120deg, var(--primary), var(--accent));
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
     color: white;
     border-radius: var(--border-radius);
-    padding: 1.5rem 2rem;
+    padding: 2rem;
     margin-bottom: 2rem;
     box-shadow: var(--box-shadow);
+  }
+
+  .page-header h2 {
+    margin: 0 0 0.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .page-header p {
+    margin: 0;
+    opacity: 0.95;
+  }
+
+  .page-header .btn {
+    margin-top: 1rem;
   }
   
   .filter-card {
     background: white;
     border-radius: var(--border-radius);
-    padding: 1.5rem;
+    padding: 2rem;
     margin-bottom: 2rem;
     box-shadow: var(--box-shadow);
+  }
+
+  .filter-card h5 {
+    color: var(--dark);
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
   
   .card-wrapper {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 25px;
-    margin-top: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
   }
 
   .student-card {
     background: white;
     border-radius: var(--border-radius);
-    padding: 15px;
+    padding: 1.25rem;
     text-align: center;
     box-shadow: var(--box-shadow);
     transition: var(--transition);
-    border: 1px solid rgba(67, 97, 238, 0.1);
+    border: 2px solid transparent;
     position: relative;
     overflow: hidden;
+    cursor: pointer;
   }
   
   .student-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    border-color: var(--primary);
+  }
+
+  .student-card.selected {
+    border-color: var(--success);
+    background: #f0fdf4;
+  }
+
+  .student-card.selected::after {
+    content: '\F26B';
+    font-family: 'bootstrap-icons';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--success);
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
   }
   
   .student-card::before {
@@ -64,8 +118,8 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--primary), var(--accent));
+    height: 5px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
   }
 
   .student-photo {
@@ -73,105 +127,250 @@
     height: 100px;
     object-fit: cover;
     border-radius: 50%;
-    border: 3px solid #e0e7ff;
-    margin: 0 auto 10px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    border: 4px solid #e0e7ff;
+    margin: 0 auto 1rem;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+    display: block;
+  }
+
+  .photo-placeholder {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+    border-radius: 50%;
+    border: 4px solid #e0e7ff;
+    margin: 0 auto 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+  }
+
+  .photo-placeholder i {
+    font-size: 2.5rem;
   }
   
   .qr-code {
-    width: 120px;
-    height: 120px;
-    margin: 10px auto;
-    padding: 8px;
+    width: 130px;
+    height: 130px;
+    margin: 1rem auto;
+    padding: 10px;
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    display: block;
+  }
+
+  .qr-placeholder {
+    width: 130px;
+    height: 130px;
+    margin: 1rem auto;
+    background: #f3f4f6;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+  }
+
+  .qr-placeholder i {
+    font-size: 3rem;
   }
   
   .student-name {
-    font-weight: 600;
+    font-weight: 700;
     color: var(--dark);
-    margin: 8px 0 4px;
-    font-size: 1rem;
+    margin: 0.75rem 0 0.5rem;
+    font-size: 1.05rem;
+    line-height: 1.3;
   }
   
   .student-class {
     color: #6c757d;
-    font-size: 0.85rem;
-    margin-bottom: 5px;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
   }
   
   .student-id {
     color: var(--primary);
-    font-size: 0.8rem;
-    font-weight: 500;
-  }
-  
-  .print-btn {
-    background: linear-gradient(120deg, var(--primary), var(--accent));
-    border: none;
-    border-radius: 30px;
-    padding: 12px 25px;
+    font-size: 0.85rem;
     font-weight: 600;
-    box-shadow: 0 5px 15px rgba(67, 97, 238, 0.2);
-    transition: var(--transition);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .print-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(67, 97, 238, 0.3);
+    background: #e0e7ff;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    display: inline-block;
   }
   
   .action-buttons {
     display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
   }
-  
-  .btn-download {
-    background: linear-gradient(120deg, #10b981, #059669);
-    color: white;
+
+  .btn-custom {
     border: none;
-    border-radius: 30px;
-    padding: 10px 20px;
-    font-weight: 500;
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
+    transition: var(--transition);
+    font-size: 0.95rem;
+  }
+
+  .btn-print {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: white;
+  }
+
+  .btn-print:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    color: white;
+  }
+
+  .btn-download {
+    background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+    color: white;
+  }
+
+  .btn-download:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+    color: white;
+  }
+
+  .btn-select-all {
+    background: linear-gradient(135deg, var(--info) 0%, #0891b2 100%);
+    color: white;
+  }
+
+  .btn-select-all:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(6, 182, 212, 0.3);
+    color: white;
+  }
+
+  .btn-clear {
+    background: #6c757d;
+    color: white;
+  }
+
+  .btn-clear:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
   }
   
   .empty-state {
     text-align: center;
-    padding: 40px 20px;
+    padding: 4rem 2rem;
     background: white;
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow);
-    margin: 20px 0;
+    margin: 2rem 0;
   }
   
   .empty-state i {
-    font-size: 3rem;
+    font-size: 4rem;
     color: #dee2e6;
-    margin-bottom: 15px;
+    margin-bottom: 1rem;
+  }
+
+  .empty-state h4 {
+    color: var(--dark);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-state p {
+    color: #6c757d;
+    margin: 0;
   }
   
   .form-control, .form-select {
     border-radius: 10px;
-    padding: 10px 15px;
-    border: 2px solid #e2e8f0;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e9ecef;
     transition: var(--transition);
+    font-size: 0.95rem;
   }
   
   .form-control:focus, .form-select:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  }
+
+  .input-group-text {
+    border-radius: 10px 0 0 10px;
+    border: 2px solid #e9ecef;
+    border-right: none;
+    background: #f8f9fa;
+    color: #6c757d;
+  }
+
+  .input-group .form-control {
+    border-left: none;
+    border-radius: 0 10px 10px 0;
+  }
+
+  .input-group .form-control:focus + .input-group-text,
+  .input-group-text:has(+ .form-control:focus) {
+    border-color: var(--primary);
+  }
+
+  .selection-info {
+    background: #e0e7ff;
+    color: var(--primary);
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .selection-info.show {
+    display: flex;
+  }
+
+  .selection-info strong {
+    font-weight: 700;
+  }
+
+  .stats-bar {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--box-shadow);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .stat-item {
+    text-align: center;
+  }
+
+  .stat-item .number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-item .label {
+    color: #6c757d;
+    font-size: 0.9rem;
+    font-weight: 500;
   }
   
   @media print {
-    .no-print, .filter-card, .page-header, .action-buttons {
+    .no-print, .filter-card, .page-header, .action-buttons, .selection-info, .stats-bar {
       display: none !important;
     }
     
@@ -183,14 +382,15 @@
     
     .container {
       max-width: 100% !important;
-      padding: 0;
+      padding: 0 !important;
+      margin: 0 !important;
     }
     
     .card-wrapper {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 15px;
-      padding: 15px;
+      gap: 12px;
+      padding: 10px;
     }
     
     .student-card {
@@ -198,32 +398,98 @@
       border: 1px solid #ddd;
       page-break-inside: avoid;
       break-inside: avoid;
+      padding: 10px;
+    }
+
+    .student-card::before {
+      display: none;
+    }
+
+    .student-card.selected::after {
+      display: none;
+    }
+
+    .student-photo {
+      width: 80px;
+      height: 80px;
+      border-width: 2px;
+    }
+
+    .photo-placeholder {
+      width: 80px;
+      height: 80px;
+    }
+
+    .qr-code {
+      width: 110px;
+      height: 110px;
+      padding: 5px;
+    }
+
+    .qr-placeholder {
+      width: 110px;
+      height: 110px;
+    }
+
+    .student-name {
+      font-size: 0.9rem;
+    }
+
+    .student-class, .student-id {
+      font-size: 0.75rem;
     }
     
     @page {
       margin: 0.5cm;
-      size: landscape;
+      size: A4 landscape;
     }
   }
   
   @media (max-width: 768px) {
     .card-wrapper {
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 15px;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
     }
     
     .student-card {
-      padding: 12px;
+      padding: 1rem;
     }
     
-    .student-photo {
-      width: 80px;
-      height: 80px;
+    .student-photo, .photo-placeholder {
+      width: 90px;
+      height: 90px;
     }
     
-    .qr-code {
-      width: 100px;
-      height: 100px;
+    .qr-code, .qr-placeholder {
+      width: 110px;
+      height: 110px;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+    }
+
+    .btn-custom {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .stats-bar {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .card-wrapper {
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+
+    .page-header {
+      padding: 1.5rem;
+    }
+
+    .filter-card {
+      padding: 1.5rem;
     }
   }
 </style>
@@ -232,84 +498,148 @@
 {% block content %}
 <div class="container py-4">
   <!-- Page Header -->
-  <div class="page-header d-flex justify-content-between align-items-center">
-    <div>
-      <h2 class="mb-1"><i class="bi bi-qr-code me-2"></i>Student QR Cards</h2>
-      <p class="mb-0">Print QR code cards for meal tracking</p>
-    </div>
-    <button onclick="window.print()" class="print-btn btn text-white">
-      <i class="bi bi-printer me-1"></i> Print All
-    </button>
+  <div class="page-header">
+    <h2><i class="bi bi-qr-code"></i>Student QR Cards</h2>
+    <p>Generate and print QR code cards for meal tracking system</p>
   </div>
+
+  <!-- Stats Bar -->
+  {% if students %}
+  <div class="stats-bar no-print">
+    <div class="stat-item">
+      <span class="number">{{ students|length }}</span>
+      <span class="label">Total Cards</span>
+    </div>
+    <div class="stat-item">
+      <span class="number" id="selected-count">0</span>
+      <span class="label">Selected</span>
+    </div>
+    <div class="stat-item">
+      <span class="number">{{ total_students }}</span>
+      <span class="label">Total Students</span>
+    </div>
+  </div>
+  {% endif %}
 
   <!-- Action Buttons -->
   <div class="action-buttons no-print">
-    <button onclick="window.print()" class="print-btn btn text-white">
-      <i class="bi bi-printer me-1"></i> Print
+    <button onclick="window.print()" class="btn btn-custom btn-print">
+      <i class="bi bi-printer-fill"></i>
+      Print Cards
     </button>
-    <button class="btn-download" onclick="downloadAllQRCodes()">
-      <i class="bi bi-download me-1"></i> Download All
+    <button class="btn btn-custom btn-download" onclick="printSelected()">
+      <i class="bi bi-printer"></i>
+      Print Selected
+    </button>
+    <button class="btn btn-custom btn-select-all" onclick="selectAll()">
+      <i class="bi bi-check-square"></i>
+      Select All
+    </button>
+    <button class="btn btn-custom btn-clear" onclick="clearSelection()">
+      <i class="bi bi-x-circle"></i>
+      Clear Selection
+    </button>
+  </div>
+
+  <!-- Selection Info -->
+  <div class="selection-info" id="selection-info">
+    <span><strong id="selection-count">0</strong> card(s) selected</span>
+    <button class="btn btn-sm btn-light" onclick="clearSelection()">
+      <i class="bi bi-x"></i> Clear
     </button>
   </div>
 
   <!-- Search and Filter Card -->
   <div class="filter-card no-print">
-    <h5 class="mb-3"><i class="bi bi-funnel me-2"></i>Filter Students</h5>
-    <form method="get" class="row g-3">
-      <div class="col-md-5">
+    <h5><i class="bi bi-funnel-fill"></i>Filter Students</h5>
+    <form method="get" class="row g-3" id="filter-form">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Search by Name</label>
         <div class="input-group">
-          <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
-          <input type="text" name="q" class="form-control border-start-0" placeholder="Search by name..." value="{{ request.GET.q }}">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input 
+            type="text" 
+            name="q" 
+            class="form-control" 
+            placeholder="Enter student name..." 
+            value="{{ request.GET.q }}"
+          >
         </div>
       </div>
-      <div class="col-md-5">
-        <select name="student_id" class="form-select">
-          <option value="">-- Select a specific student --</option>
-          {% for s in all_students %}
-            <option value="{{ s.id }}" {% if request.GET.student_id == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }} - {{ s.class_name }}</option>
+
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Filter by Class</label>
+        <select name="class" class="form-select">
+          <option value="">All Classes</option>
+          {% for class_name in classes %}
+            <option value="{{ class_name }}" {% if request.GET.class == class_name %}selected{% endif %}>
+              {{ class_name }}
+            </option>
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-2">
-        <button type="submit" class="btn btn-primary w-100">
-          <i class="bi bi-filter me-1"></i> Filter
+
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Select Specific Student</label>
+        <select name="student_id" class="form-select">
+          <option value="">Select a student...</option>
+          {% for s in all_students %}
+            <option value="{{ s.id }}" {% if request.GET.student_id == s.id|stringformat:"s" %}selected{% endif %}>
+              {{ s.name }} - {{ s.class_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-12">
+        <button type="submit" class="btn btn-custom btn-print">
+          <i class="bi bi-filter-circle-fill"></i>
+          Apply Filters
         </button>
+        <a href="{% url 'print_qr_cards' %}" class="btn btn-custom btn-clear">
+          <i class="bi bi-arrow-clockwise"></i>
+          Reset Filters
+        </a>
       </div>
     </form>
   </div>
 
   <!-- QR Cards Display -->
   {% if students %}
-  <div class="card-wrapper">
+  <div class="card-wrapper" id="cards-container">
     {% for student in students %}
-      <div class="student-card">
+      <div class="student-card" data-student-id="{{ student.id }}" onclick="toggleSelection(this)">
         {% if student.photo %}
-          <img src="{{ student.photo.url }}" alt="Photo" class="student-photo">
+          <img src="{{ student.photo.url }}" alt="{{ student.name }}" class="student-photo">
         {% else %}
-          <div class="student-photo bg-light d-flex align-items-center justify-content-center">
-            <i class="bi bi-person text-muted" style="font-size: 2rem;"></i>
+          <div class="photo-placeholder">
+            <i class="bi bi-person-fill"></i>
           </div>
         {% endif %}
 
         {% if student.qr_code_image %}
           <img src="{{ student.qr_code_image.url }}" alt="QR Code" class="qr-code">
         {% else %}
-          <div class="qr-code bg-light d-flex align-items-center justify-content-center">
-            <i class="bi bi-qr-code text-muted" style="font-size: 2rem;"></i>
+          <div class="qr-placeholder">
+            <i class="bi bi-qr-code"></i>
           </div>
         {% endif %}
 
         <div class="student-name">{{ student.name }}</div>
         <div class="student-class">{{ student.class_name }}</div>
-        <div class="student-id">ID: {{ student.id }}</div>
+        <div class="student-id">ID: {{ student.admission_number|default:student.id }}</div>
       </div>
     {% endfor %}
   </div>
   {% else %}
   <div class="empty-state">
-    <i class="bi bi-inboxes"></i>
-    <h4>No students found</h4>
-    <p class="text-muted">Try adjusting your search filters</p>
+    <i class="bi bi-inbox"></i>
+    <h4>No Students Found</h4>
+    <p>Try adjusting your search filters or add students to the system</p>
+    <a href="{% url 'add_student' %}" class="btn btn-custom btn-print mt-3">
+      <i class="bi bi-person-plus"></i>
+      Add Student
+    </a>
   </div>
   {% endif %}
 </div>
@@ -317,20 +647,138 @@
 
 {% block extra_js %}
 <script>
-  function downloadAllQRCodes() {
-    // This would typically connect to your backend to generate a ZIP file
-    alert("This would download a ZIP file containing all QR codes. Implementation would require backend support.");
+  let selectedCards = new Set();
+
+  // Toggle card selection
+  function toggleSelection(card) {
+    const studentId = card.getAttribute('data-student-id');
+    
+    if (selectedCards.has(studentId)) {
+      selectedCards.delete(studentId);
+      card.classList.remove('selected');
+    } else {
+      selectedCards.add(studentId);
+      card.classList.add('selected');
+    }
+    
+    updateSelectionDisplay();
   }
-  
-  // Add some interactive effects
-  document.addEventListener('DOMContentLoaded', function() {
+
+  // Select all cards
+  function selectAll() {
     const cards = document.querySelectorAll('.student-card');
+    selectedCards.clear();
     
     cards.forEach(card => {
-      card.addEventListener('click', function() {
-        this.classList.toggle('border-primary');
-      });
+      const studentId = card.getAttribute('data-student-id');
+      selectedCards.add(studentId);
+      card.classList.add('selected');
     });
+    
+    updateSelectionDisplay();
+  }
+
+  // Clear selection
+  function clearSelection() {
+    const cards = document.querySelectorAll('.student-card');
+    selectedCards.clear();
+    
+    cards.forEach(card => {
+      card.classList.remove('selected');
+    });
+    
+    updateSelectionDisplay();
+  }
+
+  // Update selection display
+  function updateSelectionDisplay() {
+    const count = selectedCards.size;
+    const selectionInfo = document.getElementById('selection-info');
+    const selectedCountElem = document.getElementById('selected-count');
+    const selectionCountElem = document.getElementById('selection-count');
+    
+    if (selectedCountElem) {
+      selectedCountElem.textContent = count;
+    }
+    
+    if (selectionCountElem) {
+      selectionCountElem.textContent = count;
+    }
+    
+    if (selectionInfo) {
+      if (count > 0) {
+        selectionInfo.classList.add('show');
+      } else {
+        selectionInfo.classList.remove('show');
+      }
+    }
+  }
+
+  // Print selected cards only
+  function printSelected() {
+    if (selectedCards.size === 0) {
+      alert('Please select at least one card to print');
+      return;
+    }
+
+    // Hide non-selected cards temporarily
+    const cards = document.querySelectorAll('.student-card');
+    cards.forEach(card => {
+      const studentId = card.getAttribute('data-student-id');
+      if (!selectedCards.has(studentId)) {
+        card.style.display = 'none';
+      }
+    });
+
+    // Print
+    window.print();
+
+    // Restore all cards
+    setTimeout(() => {
+      cards.forEach(card => {
+        card.style.display = '';
+      });
+    }, 100);
+  }
+
+  // Add keyboard shortcuts
+  document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + P for print
+    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+      e.preventDefault();
+      window.print();
+    }
+    
+    // Ctrl/Cmd + A for select all
+    if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+      e.preventDefault();
+      selectAll();
+    }
+    
+    // Escape to clear selection
+    if (e.key === 'Escape') {
+      clearSelection();
+    }
+  });
+
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    updateSelectionDisplay();
+    
+    // Add smooth scroll
+    const cards = document.querySelectorAll('.student-card');
+    cards.forEach((card, index) => {
+      card.style.animationDelay = `${index * 0.05}s`;
+    });
+  });
+
+  // Prevent card selection during print
+  window.addEventListener('beforeprint', function() {
+    document.body.style.userSelect = 'none';
+  });
+
+  window.addEventListener('afterprint', function() {
+    document.body.style.userSelect = '';
   });
 </script>
 {% endblock %}
