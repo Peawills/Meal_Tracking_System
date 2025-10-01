@@ -9,6 +9,7 @@ from .models import Student, FeedingRecord
 from .forms import StudentForm
 from django.db.models import Q
 from datetime import datetime
+from datetime import timedelta
 
 # PDF tools
 from reportlab.lib import colors
@@ -24,29 +25,61 @@ def is_admin(user):
 @user_passes_test(is_admin)
 def admin_dashboard(request):
     today = timezone.now().date()
-    total_students = Student.objects.count()
-    total_records_today = FeedingRecord.objects.filter(date=today).count()
+    week_ago = today - timedelta(days=7)
+    month_start = today.replace(day=1)
 
-    meals_today = (
-        FeedingRecord.objects.filter(date=today).values("meal_type").distinct()
-    )
+    # Basic stats
+    total_students = Student.objects.count()
+
+    # Today's stats
+    today_records = FeedingRecord.objects.filter(date=today)
+    total_records_today = today_records.count()
+    unique_students_today = today_records.values("student_id").distinct().count()
+
+    # Meal counts for today
+    breakfast_today = today_records.filter(meal_type="breakfast").count()
+    lunch_today = today_records.filter(meal_type="lunch").count()
+    dinner_today = today_records.filter(meal_type="dinner").count()
+    snack_today = today_records.filter(meal_type="night_snack").count()
+
+    # Weekly and monthly stats
+    total_records_week = FeedingRecord.objects.filter(date__gte=week_ago).count()
+    total_records_month = FeedingRecord.objects.filter(date__gte=month_start).count()
+
+    # Meal breakdown
     meal_counts = {
-        meal["meal_type"]: FeedingRecord.objects.filter(
-            meal_type=meal["meal_type"], date=today
-        ).count()
-        for meal in meals_today
+        "breakfast": breakfast_today,
+        "lunch": lunch_today,
+        "dinner": dinner_today,
+        "night_snack": snack_today,
     }
 
-    return render(
-        request,
-        "students/admin_dashboard.html",
-        {
-            "total_students": total_students,
-            "total_records_today": total_records_today,
-            "meal_counts": meal_counts,
-            "today": today,
-        },
+    # Remove meals with 0 count for cleaner display
+    meal_counts = {k: v for k, v in meal_counts.items() if v > 0}
+
+    # Recent activity (last 10 records)
+    recent_records = (
+        FeedingRecord.objects.select_related("student")
+        .filter(date=today)
+        .order_by("-time")[:10]
     )
+
+    context = {
+        "total_students": total_students,
+        "total_records_today": total_records_today,
+        "unique_students_today": unique_students_today,
+        "breakfast_today": breakfast_today,
+        "lunch_today": lunch_today,
+        "dinner_today": dinner_today,
+        "snack_today": snack_today,
+        "total_records_week": total_records_week,
+        "total_records_month": total_records_month,
+        "meal_counts": meal_counts,
+        "today": today,
+        "recent_records": recent_records,
+    }
+
+    return render(request, "students/admin_dashboard.html", context)
 
 
 @user_passes_test(is_admin)
@@ -70,22 +103,35 @@ def scan_page(request):
 @user_passes_test(is_admin)
 @login_required
 def print_qr_cards(request):
-    query = request.GET.get("q", "").strip()
-    student_id = request.GET.get("student_id")
+    query = request.GET.get("q", "")
+    class_filter = request.GET.get("class", "")
+    student_id = request.GET.get("student_id", "")
 
-    all_students = Student.objects.all().order_by("name")
-    students = Student.objects.all().order_by("class_name", "name")
+    students = Student.objects.all()
+
+    # Apply filters
+    if query:
+        students = students.filter(name__icontains=query)
+
+    if class_filter:
+        students = students.filter(class_name=class_filter)
 
     if student_id:
         students = students.filter(id=student_id)
-    elif query:
-        students = students.filter(name__icontains=query)
 
-    return render(
-        request,
-        "students/print_qr_cards.html",
-        {"students": students, "all_students": all_students},
-    )
+    # Get all students and classes for dropdowns
+    all_students = Student.objects.all().order_by("name")
+    classes = Student.objects.values_list("class_name", flat=True).distinct()
+    total_students = Student.objects.count()
+
+    context = {
+        "students": students,
+        "all_students": all_students,
+        "classes": classes,
+        "total_students": total_students,
+    }
+
+    return render(request, "students/print_qr_cards.html", context)
 
 
 @user_passes_test(is_admin)
@@ -137,17 +183,21 @@ def feeding_records(request):
         response["Content-Disposition"] = 'attachment; filename="meal_records.csv"'
 
         writer = csv.writer(response)
-        writer.writerow(["Student", "Admission Number", "Class", "Meal", "Date", "Time"])
+        writer.writerow(
+            ["Student", "Admission Number", "Class", "Meal", "Date", "Time"]
+        )
 
         for record in records:
-            writer.writerow([
-                record.student.name,
-                record.student.admission_number,
-                record.student.class_name,
-                record.get_meal_type_display(),
-                record.date.strftime("%Y-%m-%d"),
-                record.time.strftime("%H:%M:%S"),
-            ])
+            writer.writerow(
+                [
+                    record.student.name,
+                    record.student.admission_number,
+                    record.student.class_name,
+                    record.get_meal_type_display(),
+                    record.date.strftime("%Y-%m-%d"),
+                    record.time.strftime("%H:%M:%S"),
+                ]
+            )
         return response
 
     # ✅ PDF Export
@@ -161,32 +211,40 @@ def feeding_records(request):
 
         # Title
         elements.append(Paragraph("Meal Attendance Records", styles["Title"]))
-        elements.append(Paragraph(datetime.now().strftime("%B %d, %Y %H:%M"), styles["Normal"]))
+        elements.append(
+            Paragraph(datetime.now().strftime("%B %d, %Y %H:%M"), styles["Normal"])
+        )
         elements.append(Paragraph(" ", styles["Normal"]))
 
         # Table data
         data = [["Student", "Admission Number", "Class", "Meal", "Date", "Time"]]
         for record in records:
-            data.append([
-                record.student.name,
-                record.student.admission_number,
-                record.student.class_name,
-                record.get_meal_type_display(),
-                record.date.strftime("%Y-%m-%d"),
-                record.time.strftime("%H:%M:%S"),
-            ])
+            data.append(
+                [
+                    record.student.name,
+                    record.student.admission_number,
+                    record.student.class_name,
+                    record.get_meal_type_display(),
+                    record.date.strftime("%Y-%m-%d"),
+                    record.time.strftime("%H:%M:%S"),
+                ]
+            )
 
         # Create table
         table = Table(data, repeatRows=1)
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#667eea")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
-            ("BACKGROUND", (0, 1), (-1, -1), colors.whitesmoke),
-            ("GRID", (0, 0), (-1, -1), 1, colors.grey),
-        ]))
+        table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#667eea")),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                    ("BACKGROUND", (0, 1), (-1, -1), colors.whitesmoke),
+                    ("GRID", (0, 0), (-1, -1), 1, colors.grey),
+                ]
+            )
+        )
 
         elements.append(table)
         doc.build(elements)

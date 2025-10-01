@@ -2,11 +2,9 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.models import Group
-from .forms import CustomUserCreationForm
-from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import Group, User
+from .forms import CustomUserCreationForm
+from django.shortcuts import get_object_or_404
 
 
 @staff_member_required
