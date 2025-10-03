@@ -28,9 +28,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     "meal-tracking-system.onrender.com",
-    "127.0.0.1",
     "localhost",
-    "192.168.137.192",
+    "*",
 ]  # Change this to your domain or IP address in production
 
 
