@@ -30,6 +30,7 @@ ALLOWED_HOSTS = [
     "meal-tracking-system.onrender.com",
     "localhost",
     "*",
+    "mealtrackingsystem-production.up.railway.app",
 ]  # Change this to your domain or IP address in production
 
 
