@@ -156,3 +156,6 @@ LOGOUT_REDIRECT_URL = "login"  # where to go after logout
 
 # ✅ WhiteNoise static files config
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+CSRF_TRUSTED_ORIGINS = ["https://mealtrackingsystem-production.up.railway.app"]
+# CSRF_TRUSTED_ORIGINS = ["https://meal-tracking-system.onrender.com"]
