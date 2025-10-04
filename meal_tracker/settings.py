@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+# import dj_database_url
 
 from pathlib import Path
 import os
@@ -93,6 +94,10 @@ WSGI_APPLICATION = "meal_tracker.wsgi.application"
 #         'PORT': '5432',
 #     }
 # }
+
+# DATABASES = {
+#     "default": dj_database_url.config(default=os.getenv("DATABASE_URL"))
+#     }
 
 # Replace your current DATABASES setting with:
 DATABASES = {

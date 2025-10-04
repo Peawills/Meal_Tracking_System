@@ -419,7 +419,7 @@
         <!-- Action Buttons -->
         <div class="col-12">
           <div class="d-flex gap-2 flex-wrap">
-            <button type="submit" class="btn btn-primary" onclick="document.getElementById('filter-form').submit()">
+            <button type="submit" class="btn btn-primary" onclick="document.getElementById('filter-form').submit() ">
               <i class="bi bi-funnel-fill me-2"></i>Apply Filters
             </button>
             
@@ -564,6 +564,7 @@
     window.location.href = window.location.pathname;
   }
 
+
   // Initialize date input with today's date if empty
   document.addEventListener('DOMContentLoaded', function() {
     const dateInput = document.getElementById('date-input');
@@ -574,5 +575,7 @@
       setDate('today');
     }
   });
+
+  
 </script>
 {% endblock %}
