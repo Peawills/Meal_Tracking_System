@@ -1,4 +1,4 @@
-from django.utils import timezone
+from django.utils import timezone 
 from django.db import models
 import uuid
 import qrcode
@@ -53,7 +53,7 @@ MEAL_TYPES = [
 class FeedingRecord(models.Model):
     student = models.ForeignKey("Student", on_delete=models.CASCADE)
     class_name = models.CharField(max_length=50)
-    date = models.DateField(default=timezone.now)
+    date = models.DateField(default=timezone.now().date)
     time = models.TimeField(auto_now_add=True)  # ✅ Auto record serving time
     meal_type = models.CharField(max_length=20, choices=MEAL_TYPES)
 
