@@ -304,7 +304,7 @@
       Filter Records
     </div>
 
-    <form method="get" id="filter-form">
+    <form method="get" id="filter-form" onsubmit="console.log('Form submitting...', new FormData(this)); return true;"   action="{% url 'feeding_records' %}">
       <div class="row g-3">
         <!-- Class Filter -->
         <div class="col-md-3">
@@ -419,7 +419,7 @@
         <!-- Action Buttons -->
         <div class="col-12">
           <div class="d-flex gap-2 flex-wrap">
-            <button type="submit" class="btn btn-primary" onclick="document.getElementById('filter-form').submit() ">
+            <button type="submit" class="btn btn-primary">
               <i class="bi bi-funnel-fill me-2"></i>Apply Filters
             </button>
             
@@ -508,22 +508,23 @@
 
 <script>
   // Toggle date range visibility
-  function toggleDateRange() {
-    const useRange = document.getElementById('use-range').checked;
-    const rangeContainer = document.getElementById('date-range-container');
-    const singleDate = document.getElementById('date-input');
-    
-    if (useRange) {
-      rangeContainer.style.display = 'flex';
-      singleDate.disabled = true;
-      singleDate.value = '';
-    } else {
-      rangeContainer.style.display = 'none';
-      singleDate.disabled = false;
-      document.getElementById('start-date').value = '';
-      document.getElementById('end-date').value = '';
-    }
+  // Replace the toggleDateRange function with this:
+function toggleDateRange() {
+  const useRange = document.getElementById('use-range').checked;
+  const rangeContainer = document.getElementById('date-range-container');
+  const singleDate = document.getElementById('date-input');
+  
+  if (useRange) {
+    rangeContainer.style.display = 'flex';
+    singleDate.value = '';  // Clear it instead of disabling
+    singleDate.style.display = 'none';  // Hide it instead
+  } else {
+    rangeContainer.style.display = 'none';
+    singleDate.style.display = 'block';  // Show it again
+    document.getElementById('start-date').value = '';
+    document.getElementById('end-date').value = '';
   }
+}
 
   // Set date shortcuts
   function setDate(type) {
@@ -564,7 +565,6 @@
     window.location.href = window.location.pathname;
   }
 
-
   // Initialize date input with today's date if empty
   document.addEventListener('DOMContentLoaded', function() {
     const dateInput = document.getElementById('date-input');
@@ -575,7 +575,5 @@
       setDate('today');
     }
   });
-
-  
 </script>
 {% endblock %}

@@ -1,9 +1,14 @@
-from django.utils import timezone 
+from django.utils import timezone
 from django.db import models
 import uuid
 import qrcode
 from io import BytesIO
 from django.core.files import File
+
+
+def get_current_date():
+    """Helper function for default date"""
+    return timezone.now().date()
 
 
 class Student(models.Model):
@@ -53,7 +58,7 @@ MEAL_TYPES = [
 class FeedingRecord(models.Model):
     student = models.ForeignKey("Student", on_delete=models.CASCADE)
     class_name = models.CharField(max_length=50)
-    date = models.DateField(default=timezone.now().date)
+    date = models.DateField(default=get_current_date)
     time = models.TimeField(auto_now_add=True)  # ✅ Auto record serving time
     meal_type = models.CharField(max_length=20, choices=MEAL_TYPES)
 

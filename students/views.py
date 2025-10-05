@@ -19,7 +19,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
-
+# Add this to your views.py
 
 def is_admin(user):
     return user.is_superuser  # or user.is_staff if you want staff too
@@ -140,68 +140,65 @@ def print_qr_cards(request):
 @user_passes_test(is_admin)
 @login_required
 def feeding_records(request):
-    class_filter = request.GET.get("class")
-    search_query = request.GET.get("search")
-    meal_filter = request.GET.get("meal_type")
-    selected_date = request.GET.get("date")
-    start_date = request.GET.get("start_date")
-    end_date = request.GET.get("end_date")
+    class_filter = request.GET.get("class", "")
+    search_query = request.GET.get("search", "")
+    meal_filter = request.GET.get("meal_type", "")
+    selected_date = request.GET.get("date", "")
+    start_date = request.GET.get("start_date", "")
+    end_date = request.GET.get("end_date", "")
     export = request.GET.get("export")
 
     # Base queryset
     records = FeedingRecord.objects.select_related("student").order_by("-date", "-time")
 
-    # Filter by class
-    if class_filter:
+    # Filter by class - only if not empty
+    if class_filter and class_filter.strip():
         records = records.filter(student__class_name=class_filter)
 
-    # Search by name or admission number
-    if search_query:
+    # Search - ignore "None" string and empty values
+    if search_query and search_query.strip() and search_query != "None":
         records = records.filter(
             Q(student__name__icontains=search_query)
             | Q(student__admission_number__icontains=search_query)
         )
 
-    # Filter by meal type
-    if meal_filter:
+    # Filter by meal type - only if not empty
+    if meal_filter and meal_filter.strip():
         records = records.filter(meal_type=meal_filter)
 
     # Date filtering with proper parsing
     use_date_range = False
-    
+
     if start_date and end_date:
-        # Parse dates properly
         start = parse_date(start_date)
         end = parse_date(end_date)
-        
+
         if start and end:
             records = records.filter(date__range=[start, end])
             use_date_range = True
-        else:
-            messages.error(request, "Invalid date format")
-            
+
     elif start_date:
         start = parse_date(start_date)
         if start:
             records = records.filter(date__gte=start)
             use_date_range = True
-        else:
-            messages.error(request, "Invalid start date format")
-            
+
     elif end_date:
         end = parse_date(end_date)
         if end:
             records = records.filter(date__lte=end)
             use_date_range = True
-        else:
-            messages.error(request, "Invalid end date format")
-            
-    elif selected_date:
+
+    elif selected_date and selected_date.strip():
         date_obj = parse_date(selected_date)
         if date_obj:
             records = records.filter(date=date_obj)
-        else:
-            messages.error(request, "Invalid date format")
+
+    # ... rest of your export code remains the same ...
+
+    # Return None as empty string for template
+    search_query = search_query if search_query != "None" else ""
+
 
     # CSV Export (rest remains the same)
     if export == "csv":
@@ -286,6 +283,7 @@ def feeding_records(request):
         "breakfast_count": breakfast_count,
         "lunch_count": lunch_count,
         "dinner_count": dinner_count,
+        
     })
     
     
