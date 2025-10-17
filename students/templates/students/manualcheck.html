@@ -272,6 +272,54 @@
         margin: 0 auto 1rem;
     }
 
+    /* Responsive improvements for mobile */
+    @media (max-width: 600px) {
+        .results-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .student-result-card {
+            padding: 1rem;
+        }
+
+        .result-avatar, .result-avatar-placeholder {
+            width: 56px;
+            height: 56px;
+        }
+
+        .student-result-header {
+            gap: 0.5rem;
+        }
+
+        .result-info h3 {
+            font-size: 1.05rem;
+        }
+
+        .result-details {
+            grid-template-columns: 1fr;
+        }
+
+        .select-button {
+            width: 100%;
+            padding: 0.9rem;
+            font-size: 0.98rem;
+        }
+
+        .modal-student-photo, .modal-photo-placeholder {
+            width: 96px;
+            height: 96px;
+            font-size: 2.2rem;
+            border-width: 4px;
+        }
+
+        .confirmation-modal {
+            width: 95%;
+            padding: 0;
+            max-width: 420px;
+        }
+    }
+
     .modal-student-name {
         font-size: 1.8rem;
         margin-bottom: 0.5rem;
