@@ -661,6 +661,9 @@
                 <div class="warning-text" id="warningText"></div>
             </div>
 
+            <!-- Modal feedback (errors/success messages) -->
+            <div id="modalFeedback" style="display:none;margin-bottom:1rem;" role="status" aria-live="polite"></div>
+
             <!-- Student Details -->
             <div class="verification-section">
                 <div class="verification-title">
@@ -931,58 +934,110 @@
         const notes = document.getElementById('notesTextarea').value;
 
         if (!reason) {
-            alert('Please select a reason for manual entry');
+            showModalFeedback('Please select a reason for manual entry', 'error');
             return;
         }
 
         if (!selectedStudent) {
-            alert('No student selected');
+            showModalFeedback('No student selected', 'error');
             return;
         }
-
     const confirmBtn = document.querySelector('.btn-confirm');
     const originalText = confirmBtn.innerHTML;
     confirmBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Processing...';
     confirmBtn.disabled = true;
 
-        fetch('/api/manual-meal-entry/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                student_id: selectedStudent.id,
-                meal_type: selectedMeal,
-                reason: reason,
-                notes: notes
-            })
+    // Clear previous feedback
+    showModalFeedback('', 'clear');
+
+    fetch('/api/manual-meal-entry/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            student_id: selectedStudent.id,
+            meal_type: selectedMeal,
+            reason: reason,
+            notes: notes
         })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showSuccessNotification(selectedStudent.full_name + ' (' + selectedMeal.replace('_',' ') + ')');
-                    closeModal();
-                    document.getElementById('searchInput').value = '';
-                    document.getElementById('resultsSection').style.display = 'none';
-                } else {
-                    // If server reports already checked in, show friendly message and keep modal open
-                    if (data.error && data.error.toLowerCase().includes('already')) {
-                        document.getElementById('warningBox').classList.add('show');
-                        document.getElementById('warningText').textContent = `This student has already been recorded for ${selectedMeal.replace('_',' ')} today.`;
-                    } else {
-                        alert('Error: ' + (data.error || 'Failed to record meal'));
-                    }
-                    confirmBtn.innerHTML = originalText;
-                    confirmBtn.disabled = false;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
-                confirmBtn.innerHTML = originalText;
-                confirmBtn.disabled = false;
-            });
+    })
+    .then(async response => {
+        const text = await response.text();
+        let data = null;
+        try {
+            data = text ? JSON.parse(text) : null;
+        } catch (e) {
+            // not JSON
+            throw new Error('Server returned non-JSON response: ' + text);
+        }
+
+        if (!response.ok) {
+            const msg = (data && data.error) ? data.error : `Request failed (${response.status})`;
+            throw new Error(msg);
+        }
+
+        return data;
+    })
+    .then(data => {
+        if (data && data.success) {
+            showSuccessNotification(selectedStudent.full_name + ' (' + selectedMeal.replace('_',' ') + ')');
+            closeModal();
+            document.getElementById('searchInput').value = '';
+            document.getElementById('resultsSection').style.display = 'none';
+        } else {
+            const err = (data && data.error) ? data.error : 'Failed to record meal';
+            if (err.toLowerCase().includes('already')) {
+                document.getElementById('warningBox').classList.add('show');
+                document.getElementById('warningText').textContent = `This student has already been recorded for ${selectedMeal.replace('_',' ')} today.`;
+                showModalFeedback(err, 'warning');
+            } else {
+                showModalFeedback(err, 'error');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Manual entry error:', error);
+        showModalFeedback(error.message || 'An error occurred. Please try again.', 'error');
+    })
+    .finally(() => {
+        confirmBtn.innerHTML = originalText;
+        confirmBtn.disabled = false;
+    });
+    }
+
+    function showModalFeedback(message, type) {
+        const box = document.getElementById('modalFeedback');
+        if (!box) return;
+        if (type === 'clear') {
+            box.style.display = 'none';
+            box.textContent = '';
+            box.className = '';
+            return;
+        }
+        box.style.display = message ? 'block' : 'none';
+        box.textContent = message || '';
+        box.className = '';
+        if (type === 'error') {
+            box.style.background = '#fee2e2';
+            box.style.border = '2px solid #ef4444';
+            box.style.color = '#991b1b';
+            box.style.padding = '0.8rem';
+            box.style.borderRadius = '8px';
+        } else if (type === 'warning') {
+            box.style.background = '#fff7ed';
+            box.style.border = '2px solid #f59e0b';
+            box.style.color = '#92400e';
+            box.style.padding = '0.8rem';
+            box.style.borderRadius = '8px';
+        } else if (type === 'success') {
+            box.style.background = '#ecfdf5';
+            box.style.border = '2px solid #10b981';
+            box.style.color = '#064e3b';
+            box.style.padding = '0.8rem';
+            box.style.borderRadius = '8px';
+        }
     }
 
     function showSuccessNotification(studentName) {
