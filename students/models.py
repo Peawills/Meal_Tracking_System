@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.conf import settings
 from django.db import models
 import uuid
 import qrcode
@@ -61,6 +62,20 @@ class FeedingRecord(models.Model):
     date = models.DateField(default=get_current_date)
     time = models.TimeField(auto_now_add=True)  # ✅ Auto record serving time
     meal_type = models.CharField(max_length=20, choices=MEAL_TYPES)
+    # How the meal was authorized: scanner/card/manual
+    AUTH_METHODS = [
+        ("scanner", "Scanner/Card"),
+        ("manual", "Manual"),
+        ("other", "Other"),
+    ]
+    auth_method = models.CharField(
+        max_length=20, choices=AUTH_METHODS, default="scanner"
+    )
+    reason = models.CharField(max_length=255, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    performed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
+    )
 
     class Meta:
         unique_together = (

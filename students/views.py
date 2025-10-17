@@ -12,6 +12,8 @@ from datetime import datetime
 from datetime import timedelta
 from django.utils.dateparse import parse_date
 from django.contrib import messages
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 
 # PDF tools
@@ -20,6 +22,7 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 # Add this to your views.py
+
 
 def is_admin(user):
     return user.is_superuser  # or user.is_staff if you want staff too
@@ -199,23 +202,41 @@ def feeding_records(request):
     # Return None as empty string for template
     search_query = search_query if search_query != "None" else ""
 
-
     # CSV Export (rest remains the same)
     if export == "csv":
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="meal_records.csv"'
         writer = csv.writer(response)
-        writer.writerow(["Student", "Admission Number", "Class", "Meal", "Date", "Time"])
-        
+        writer.writerow(
+            [
+                "Student",
+                "Admission Number",
+                "Class",
+                "Meal",
+                "Date",
+                "Time",
+                "Recorded By",
+                "Reason",
+                "Notes",
+            ]
+        )
+
         for record in records:
-            writer.writerow([
-                record.student.name,
-                record.student.admission_number,
-                record.student.class_name,
-                record.get_meal_type_display(),
-                record.date.strftime("%Y-%m-%d"),
-                record.time.strftime("%H:%M:%S"),
-            ])
+            writer.writerow(
+                [
+                    record.student.name,
+                    record.student.admission_number,
+                    record.student.class_name,
+                    record.get_meal_type_display(),
+                    record.date.strftime("%Y-%m-%d"),
+                    record.time.strftime("%H:%M:%S"),
+                    getattr(record.performed_by, "username", "")
+                    if record.performed_by
+                    else "",
+                    record.reason or "",
+                    record.notes or "",
+                ]
+            )
         return response
 
     # PDF Export (rest remains the same)
@@ -225,33 +246,41 @@ def feeding_records(request):
         doc = SimpleDocTemplate(response, pagesize=landscape(A4))
         elements = []
         styles = getSampleStyleSheet()
-        
+
         elements.append(Paragraph("Meal Attendance Records", styles["Title"]))
-        elements.append(Paragraph(datetime.now().strftime("%B %d, %Y %H:%M"), styles["Normal"]))
+        elements.append(
+            Paragraph(datetime.now().strftime("%B %d, %Y %H:%M"), styles["Normal"])
+        )
         elements.append(Paragraph(" ", styles["Normal"]))
-        
+
         data = [["Student", "Admission Number", "Class", "Meal", "Date", "Time"]]
         for record in records:
-            data.append([
-                record.student.name,
-                record.student.admission_number,
-                record.student.class_name,
-                record.get_meal_type_display(),
-                record.date.strftime("%Y-%m-%d"),
-                record.time.strftime("%H:%M:%S"),
-            ])
-        
+            data.append(
+                [
+                    record.student.name,
+                    record.student.admission_number,
+                    record.student.class_name,
+                    record.get_meal_type_display(),
+                    record.date.strftime("%Y-%m-%d"),
+                    record.time.strftime("%H:%M:%S"),
+                ]
+            )
+
         table = Table(data, repeatRows=1)
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#667eea")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
-            ("BACKGROUND", (0, 1), (-1, -1), colors.whitesmoke),
-            ("GRID", (0, 0), (-1, -1), 1, colors.grey),
-        ]))
-        
+        table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#667eea")),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                    ("BACKGROUND", (0, 1), (-1, -1), colors.whitesmoke),
+                    ("GRID", (0, 0), (-1, -1), 1, colors.grey),
+                ]
+            )
+        )
+
         elements.append(table)
         doc.build(elements)
         return response
@@ -265,29 +294,35 @@ def feeding_records(request):
     dinner_count = records.filter(meal_type="dinner").count()
 
     # Get distinct classes
-    classes = Student.objects.values_list("class_name", flat=True).distinct().order_by("class_name")
+    classes = (
+        Student.objects.values_list("class_name", flat=True)
+        .distinct()
+        .order_by("class_name")
+    )
 
-    return render(request, "students/feeding_records.html", {
-        "records": records,
-        "classes": classes,
-        "selected_class": class_filter,
-        "selected_meal": meal_filter,
-        "search_query": search_query,
-        "selected_date": selected_date,
-        "start_date": start_date,
-        "end_date": end_date,
-        "use_date_range": use_date_range,
-        "show_stats": show_stats,
-        "total_records": total_records,
-        "unique_students": unique_students,
-        "breakfast_count": breakfast_count,
-        "lunch_count": lunch_count,
-        "dinner_count": dinner_count,
-        
-    })
-    
-    
-    
+    return render(
+        request,
+        "students/feeding_records.html",
+        {
+            "records": records,
+            "classes": classes,
+            "selected_class": class_filter,
+            "selected_meal": meal_filter,
+            "search_query": search_query,
+            "selected_date": selected_date,
+            "start_date": start_date,
+            "end_date": end_date,
+            "use_date_range": use_date_range,
+            "show_stats": show_stats,
+            "total_records": total_records,
+            "unique_students": unique_students,
+            "breakfast_count": breakfast_count,
+            "lunch_count": lunch_count,
+            "dinner_count": dinner_count,
+        },
+    )
+
+
 # ✅ API: Get Student by QR Code
 @login_required
 def get_student_by_qr(request, qr_code):
@@ -329,6 +364,7 @@ def mark_student_as_fed(request, qr_code):
             class_name=student.class_name,
             meal_type=meal_type,
             date=today,
+            performed_by=request.user,
         )
         return JsonResponse({"status": "success"})
 
@@ -388,3 +424,171 @@ def export_feeding_records_csv(request):
         )
 
     return response
+
+
+@ensure_csrf_cookie
+@user_passes_test(is_admin)
+@login_required
+def manual_check_page(request):
+    # Determine current meal heuristically based on hour
+    hour = datetime.now().hour
+    if 6 <= hour < 10:
+        current_meal = "breakfast"
+    elif 10 <= hour < 15:
+        current_meal = "lunch"
+    elif 15 <= hour < 20:
+        current_meal = "dinner"
+    else:
+        current_meal = "night_snack"
+
+    return render(request, "students/manualcheck.html", {"current_meal": current_meal})
+
+
+@login_required
+def api_search_students(request):
+    q = request.GET.get("q", "").strip()
+    results = []
+    if q:
+        students = Student.objects.filter(
+            Q(name__icontains=q) | Q(admission_number__icontains=q)
+        )[:50]
+
+        for s in students:
+            results.append(
+                {
+                    "id": s.id,
+                    "full_name": s.name,
+                    "surname": s.name.split()[-1] if s.name else "",
+                    "admission_no": s.admission_number,
+                    "class_at_present": s.class_name,
+                    "age": "N/A",
+                    "sex": "N/A",
+                    "card_status": "Active",
+                    "image": s.photo.url if s.photo else "",
+                    # checked_in_today, last_meal, recent_meals are for client display
+                    "checked_in_today": FeedingRecord.objects.filter(
+                        student=s,
+                        date=timezone.now().date(),
+                        meal_type=request.GET.get("meal_type", None) or None,
+                    ).exists()
+                    if q
+                    else False,
+                    "last_meal": "",
+                    "recent_meals": [
+                        {
+                            "meal_type": r.meal_type,
+                            "date": r.date.strftime("%Y-%m-%d"),
+                            "auth_method": r.auth_method,
+                            "reason": r.reason or "",
+                            "notes": r.notes or "",
+                            "performed_by": getattr(r.performed_by, "username", "")
+                            if r.performed_by
+                            else "",
+                        }
+                        for r in FeedingRecord.objects.filter(student=s).order_by(
+                            "-date", "-time"
+                        )[:3]
+                    ],
+                }
+            )
+
+    return JsonResponse({"students": results})
+
+
+@login_required
+def api_check_student_meal(request):
+    """POST or GET with student_id and meal_type -> whether already checked in today and recent meals"""
+    student_id = request.GET.get("student_id") or request.POST.get("student_id")
+    meal_type = request.GET.get("meal_type") or request.POST.get("meal_type")
+
+    if not student_id or not meal_type:
+        return JsonResponse(
+            {"success": False, "error": "student_id and meal_type required"}, status=400
+        )
+
+    try:
+        student = Student.objects.get(id=student_id)
+    except Student.DoesNotExist:
+        return JsonResponse(
+            {"success": False, "error": "Student not found"}, status=404
+        )
+
+    today = timezone.now().date()
+    checked = FeedingRecord.objects.filter(
+        student=student, date=today, meal_type=meal_type
+    ).exists()
+
+    recent = FeedingRecord.objects.filter(student=student).order_by("-date", "-time")[
+        :5
+    ]
+    recent_list = [
+        {
+            "meal_type": r.meal_type,
+            "date": r.date.strftime("%Y-%m-%d"),
+            "auth_method": r.auth_method,
+            "reason": r.reason or "",
+            "notes": r.notes or "",
+            "performed_by": getattr(r.performed_by, "username", "")
+            if r.performed_by
+            else "",
+        }
+        for r in recent
+    ]
+
+    return JsonResponse(
+        {"success": True, "checked_in": checked, "recent_meals": recent_list}
+    )
+
+
+@login_required
+@require_POST
+def api_manual_meal_entry(request):
+    try:
+        data = json.loads(request.body)
+    except Exception:
+        return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+
+    student_id = data.get("student_id")
+    meal_type = data.get("meal_type")
+    reason = data.get("reason")
+    notes = data.get("notes", "")
+
+    if not student_id or not meal_type or not reason:
+        return JsonResponse(
+            {"success": False, "error": "Missing required fields"}, status=400
+        )
+
+    try:
+        student = Student.objects.get(id=student_id)
+    except Student.DoesNotExist:
+        return JsonResponse(
+            {"success": False, "error": "Student not found"}, status=404
+        )
+
+    today = timezone.now().date()
+    # Prevent duplicates
+    if FeedingRecord.objects.filter(
+        student=student, meal_type=meal_type, date=today
+    ).exists():
+        return JsonResponse(
+            {"success": False, "error": "Student already checked in for this meal"},
+            status=400,
+        )
+
+    # Create record
+    rec = FeedingRecord.objects.create(
+        student=student,
+        class_name=student.class_name,
+        meal_type=meal_type,
+        date=today,
+        auth_method="manual",
+        reason=reason,
+        notes=notes,
+        performed_by=request.user,
+    )
+
+    # Optionally store reason/notes in messages or another model (not implemented)
+    if notes:
+        messages.info(request, f"Manual entry for {student.name}: {reason} - {notes}")
+
+    return JsonResponse({"success": True, "record_id": rec.id})

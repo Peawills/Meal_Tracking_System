@@ -1,0 +1,1021 @@
+{# Use the project's base template for students templates #}
+{% extends 'students/basetemp.html' %}
+{% load static %}
+
+{% block title %}Manual Meal Check-in{% endblock %}
+
+{% block extra_css %}
+<style>
+    .checkin-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .header-card {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .header-card h1 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .current-meal-badge {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.5rem 1.5rem;
+        border-radius: 50px;
+        display: inline-block;
+        margin-top: 1rem;
+        font-size: 1.1rem;
+    }
+
+    .search-section {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .search-box {
+        position: relative;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 1.5rem 1.5rem 1.5rem 4rem;
+        font-size: 1.2rem;
+        border: 3px solid #10b981;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 1.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.5rem;
+        color: #10b981;
+    }
+
+    .search-suggestions {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .suggestion-chip {
+        padding: 0.5rem 1rem;
+        background: #f3f4f6;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        color: #666;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+    }
+
+    .suggestion-chip:hover {
+        background: #10b981;
+        color: white;
+    }
+
+    .results-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .student-result-card {
+        background: white;
+        border: 3px solid #e5e7eb;
+        border-radius: 15px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .student-result-card:hover {
+        border-color: #10b981;
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    }
+
+    .student-result-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .result-avatar {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #10b981;
+    }
+
+    .result-avatar-placeholder {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+        font-weight: 600;
+        border: 3px solid #10b981;
+    }
+
+    .result-info h3 {
+        margin: 0;
+        font-size: 1.3rem;
+        color: #333;
+    }
+
+    .result-admission {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+    }
+
+    .result-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 2px solid #f3f4f6;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .detail-label {
+        font-size: 0.75rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.25rem;
+    }
+
+    .detail-value {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .select-button {
+        width: 100%;
+        padding: 1rem;
+        margin-top: 1rem;
+        background: #10b981;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .select-button:hover {
+        background: #059669;
+        transform: scale(1.02);
+    }
+
+    /* Confirmation Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .confirmation-modal {
+        background: white;
+        border-radius: 20px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(50px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 20px 20px 0 0;
+        text-align: center;
+    }
+
+    .modal-student-photo {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 5px solid white;
+        margin: 0 auto 1rem;
+    }
+
+    .modal-photo-placeholder {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        border: 5px solid white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        margin: 0 auto 1rem;
+    }
+
+    .modal-student-name {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .modal-student-admission {
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+
+    .modal-body {
+        padding: 2rem;
+    }
+
+    .verification-section {
+        background: #f9fafb;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .verification-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .info-item {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #10b981;
+    }
+
+    .info-label {
+        font-size: 0.8rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.25rem;
+    }
+
+    .info-value {
+        font-weight: 600;
+        color: #333;
+        font-size: 1rem;
+    }
+
+    .reason-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .reason-label {
+        font-weight: 600;
+        color: #333;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .reason-select {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .reason-select:focus {
+        outline: none;
+        border-color: #10b981;
+    }
+
+    .notes-textarea {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 1rem;
+        margin-top: 0.5rem;
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .notes-textarea:focus {
+        outline: none;
+        border-color: #10b981;
+    }
+
+    .meal-history {
+        background: #fef3c7;
+        border: 2px solid #fbbf24;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .history-title {
+        font-weight: 600;
+        color: #92400e;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .history-item {
+        font-size: 0.9rem;
+        color: #92400e;
+        margin: 0.25rem 0;
+    }
+
+    .warning-box {
+        background: #fee2e2;
+        border: 2px solid #ef4444;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        display: none;
+    }
+
+    .warning-box.show {
+        display: block;
+    }
+
+    .warning-title {
+        font-weight: 600;
+        color: #991b1b;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .warning-text {
+        color: #991b1b;
+        font-size: 0.9rem;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .btn-cancel {
+        flex: 1;
+        padding: 1rem;
+        background: #f3f4f6;
+        color: #666;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-cancel:hover {
+        background: #e5e7eb;
+    }
+
+    .btn-confirm {
+        flex: 2;
+        padding: 1rem;
+        background: #10b981;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-confirm:hover {
+        background: #059669;
+        transform: scale(1.02);
+    }
+
+    .btn-confirm:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 3rem;
+        color: #999;
+    }
+
+    .no-results i {
+        font-size: 5rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 2rem;
+        color: #10b981;
+    }
+
+    .loading i {
+        font-size: 3rem;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: white;
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding: 0.75rem 1.5rem;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50px;
+        transition: all 0.3s ease;
+        border: none;
+    }
+
+    .back-button:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="checkin-container">
+    <!-- Header -->
+    <div class="header-card">
+        <a href="{% url 'scan_qr' %}" class="back-button">
+            <i class="bi bi-arrow-left"></i> Back to Check-in
+        </a>
+        <h1><i class="bi bi-search"></i> Manual Student Lookup</h1>
+        <p>Search by name or admission number for emergency meal check-in</p>
+        <div class="current-meal-badge">
+            <i class="bi bi-clock"></i> Current Meal: <strong>{{ current_meal|title }}</strong>
+        </div>
+        <!-- Meal selection buttons -->
+        <div style="margin-top:1rem; display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap;">
+            <button type="button" class="suggestion-chip" id="meal_breakfast" onclick="setMeal('breakfast')">Breakfast</button>
+            <button type="button" class="suggestion-chip" id="meal_lunch" onclick="setMeal('lunch')">Lunch</button>
+            <button type="button" class="suggestion-chip" id="meal_dinner" onclick="setMeal('dinner')">Dinner</button>
+            <button type="button" class="suggestion-chip" id="meal_night_snack" onclick="setMeal('night_snack')">Night Snack</button>
+        </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="search-section">
+        <h3 style="margin-bottom: 1rem;">
+            <i class="bi bi-search"></i> Search Student
+        </h3>
+
+        <form id="searchForm" onsubmit="return false;">
+            <div class="search-box">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" id="searchInput" class="search-input"
+                    placeholder="Enter student name or admission number..." autocomplete="off"
+                    oninput="searchStudents()">
+            </div>
+        </form>
+
+        <div class="search-suggestions">
+            <span style="color: #666; font-size: 0.9rem;">Try:</span>
+            <button type="button" class="suggestion-chip" onclick="fillSearch('STU')">
+                <i class="bi bi-lightbulb"></i> STU/2024/001
+            </button>
+            <button type="button" class="suggestion-chip" onclick="fillSearch('John')">
+                <i class="bi bi-lightbulb"></i> John
+            </button>
+            <button type="button" class="suggestion-chip" onclick="fillSearch('SS')">
+                <i class="bi bi-lightbulb"></i> SS 2
+            </button>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="resultsSection" style="display: none;">
+        <h3 style="margin-bottom: 1rem;">
+            <i class="bi bi-people"></i> Search Results (<span id="resultCount">0</span>)
+        </h3>
+        <div id="resultsGrid" class="results-grid"></div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="loading" style="display: none;">
+        <i class="bi bi-arrow-repeat"></i>
+        <p>Searching...</p>
+    </div>
+
+    <!-- No Results -->
+    <div id="noResults" class="no-results" style="display: none;">
+        <i class="bi bi-inbox"></i>
+        <h4>No Students Found</h4>
+        <p>Try searching with a different name or admission number</p>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmationModal" class="modal-overlay">
+    <div class="confirmation-modal">
+        <div class="modal-header">
+            <div id="modalPhoto"></div>
+            <div class="modal-student-name" id="modalName"></div>
+            <div class="modal-student-admission" id="modalAdmission"></div>
+        </div>
+
+        <div class="modal-body">
+            <!-- Warning for already checked in -->
+            <div id="warningBox" class="warning-box">
+                <div class="warning-title">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    Already Checked In Today
+                </div>
+                <div class="warning-text" id="warningText"></div>
+            </div>
+
+            <!-- Student Details -->
+            <div class="verification-section">
+                <div class="verification-title">
+                    <i class="bi bi-person-badge"></i>
+                    Verify Student Details
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Class</div>
+                        <div class="info-value" id="modalClass"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Age</div>
+                        <div class="info-value" id="modalAge"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Gender</div>
+                        <div class="info-value" id="modalGender"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Card Status</div>
+                        <div class="info-value" id="modalCardStatus"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Meal History -->
+            <div class="meal-history" id="mealHistory" style="display: none;">
+                <div class="history-title">
+                    <i class="bi bi-clock-history"></i>
+                    Recent Meal History
+                </div>
+                <div id="historyContent"></div>
+            </div>
+
+            <!-- Reason for Manual Entry -->
+            <div class="reason-section">
+                <label class="reason-label">
+                    <i class="bi bi-question-circle"></i> Reason for Manual Entry *
+                </label>
+                <select id="reasonSelect" class="reason-select" required>
+                    <option value="">-- Select Reason --</option>
+                    <option value="lost_card">Lost Meal Card</option>
+                    <option value="forgotten_card">Forgotten Card at Home</option>
+                    <option value="damaged_card">Damaged Card</option>
+                    <option value="stolen_card">Stolen Card</option>
+                    <option value="system_error">System/Scanner Error</option>
+                    <option value="new_student">New Student (No Card Yet)</option>
+                    <option value="emergency">Emergency Situation</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+
+            <!-- Additional Notes -->
+            <div class="reason-section">
+                <label class="reason-label">
+                    <i class="bi bi-chat-left-text"></i> Additional Notes (Optional)
+                </label>
+                <textarea id="notesTextarea" class="notes-textarea"
+                    placeholder="Add any additional information..."></textarea>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeModal()">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </button>
+                <button type="button" class="btn-confirm" onclick="confirmMealEntry()">
+                    <i class="bi bi-check-circle"></i> Confirm & Record Meal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let searchTimeout;
+    let selectedStudent = null;
+    let selectedMeal = '{{ current_meal }}';
+    let selectedStudentChecked = false;
+
+    function setMeal(meal) {
+        selectedMeal = meal;
+        // update visual active state
+        ['breakfast','lunch','dinner','night_snack'].forEach(m => {
+            const el = document.getElementById('meal_' + m);
+            if (!el) return;
+            if (m === meal) {
+                el.style.background = '#10b981'; el.style.color = 'white';
+            } else { el.style.background = '#f3f4f6'; el.style.color = '#666'; }
+        });
+    }
+
+    function searchStudents() {
+        const searchTerm = document.getElementById('searchInput').value.trim();
+
+        clearTimeout(searchTimeout);
+
+        if (searchTerm.length < 2) {
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('noResults').style.display = 'none';
+            return;
+        }
+
+        document.getElementById('loadingState').style.display = 'block';
+        document.getElementById('resultsSection').style.display = 'none';
+        document.getElementById('noResults').style.display = 'none';
+
+        searchTimeout = setTimeout(() => {
+            fetch(`/api/search-students/?q=${encodeURIComponent(searchTerm)}&meal_type=${encodeURIComponent(selectedMeal)}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loadingState').style.display = 'none';
+
+                    if (data.students && data.students.length > 0) {
+                        displayResults(data.students);
+                    } else {
+                        document.getElementById('noResults').style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('loadingState').style.display = 'none';
+                    document.getElementById('noResults').style.display = 'block';
+                });
+        }, 500);
+    }
+
+    function displayResults(students) {
+        const resultsGrid = document.getElementById('resultsGrid');
+        const resultCount = document.getElementById('resultCount');
+
+        resultCount.textContent = students.length;
+        resultsGrid.innerHTML = '';
+
+        students.forEach(student => {
+            const card = createStudentCard(student);
+            resultsGrid.appendChild(card);
+        });
+
+        document.getElementById('resultsSection').style.display = 'block';
+    }
+
+    function createStudentCard(student) {
+        const card = document.createElement('div');
+        card.className = 'student-result-card';
+        card.onclick = () => selectStudent(student);
+
+        const avatarHtml = student.image
+            ? `<img src="${student.image}" class="result-avatar" alt="${student.full_name}">`
+            : `<div class="result-avatar-placeholder">${student.surname.charAt(0)}</div>`;
+
+        card.innerHTML = `
+        <div class="student-result-header">
+            ${avatarHtml}
+            <div class="result-info">
+                <h3>${student.full_name}</h3>
+                <div class="result-admission">
+                    <i class="bi bi-card-text"></i> ${student.admission_no}
+                </div>
+            </div>
+        </div>
+        
+        <div class="result-details">
+            <div class="detail-item">
+                <div class="detail-label">Class</div>
+                <div class="detail-value">${student.class_at_present}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Age</div>
+                <div class="detail-value">${student.age} years</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Gender</div>
+                <div class="detail-value">${student.sex}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Card Status</div>
+                <div class="detail-value">${student.card_status}</div>
+            </div>
+        </div>
+        
+        <button type="button" class="select-button">
+            <i class="bi bi-check-circle"></i> Select Student
+        </button>
+    `;
+
+        return card;
+    }
+
+    function selectStudent(student) {
+        selectedStudent = student;
+
+        const photoHtml = student.image
+            ? `<img src="${student.image}" class="modal-student-photo" alt="${student.full_name}">`
+            : `<div class="modal-photo-placeholder">${student.surname.charAt(0)}</div>`;
+
+        document.getElementById('modalPhoto').innerHTML = photoHtml;
+        document.getElementById('modalName').textContent = student.full_name;
+        document.getElementById('modalAdmission').textContent = `Admission No: ${student.admission_no}`;
+        document.getElementById('modalClass').textContent = student.class_at_present;
+        document.getElementById('modalAge').textContent = `${student.age} years`;
+        document.getElementById('modalGender').textContent = student.sex;
+        document.getElementById('modalCardStatus').textContent = student.card_status;
+
+        // Fetch check for this student and selected meal
+        fetch(`/api/check-student-meal/?student_id=${student.id}&meal_type=${encodeURIComponent(selectedMeal)}`)
+            .then(r => r.json())
+            .then(data => {
+                        if (data.success) {
+                            selectedStudentChecked = !!data.checked_in;
+                            if (data.checked_in) {
+                                document.getElementById('warningBox').classList.add('show');
+                                document.getElementById('warningText').textContent = `This student has already checked in for ${selectedMeal.replace('_',' ')} today.`;
+                                document.querySelector('.btn-confirm').disabled = true;
+                            } else {
+                                document.getElementById('warningBox').classList.remove('show');
+                                document.querySelector('.btn-confirm').disabled = false;
+                            }
+
+                    if (data.recent_meals && data.recent_meals.length > 0) {
+                        let historyHtml = '';
+                        // show at most 3 recent meals
+                        const recentToShow = data.recent_meals.slice(0, 3);
+                        recentToShow.forEach(meal => {
+                            historyHtml += `<div class="history-item">
+                                    <i class="bi bi-dot"></i> ${meal.meal_type} - ${meal.date} (${meal.auth_method})`;
+                            if (meal.reason) historyHtml += `<div style="font-size:0.9rem;color:#666;margin-left:18px;">Reason: ${meal.reason}</div>`;
+                            if (meal.notes) historyHtml += `<div style="font-size:0.9rem;color:#666;margin-left:18px;">Notes: ${meal.notes}</div>`;
+                            if (meal.performed_by) historyHtml += `<div style="font-size:0.85rem;color:#444;margin-left:18px;">Recorded by: ${meal.performed_by}</div>`;
+                            historyHtml += `</div>`;
+                        });
+                        // if there are more records, show a small indicator
+                        const remaining = data.recent_meals.length - recentToShow.length;
+                        if (remaining > 0) {
+                            historyHtml += `<div class="history-item" style="font-size:0.9rem;color:#444;margin-top:6px;">and ${remaining} more previous record${remaining>1 ? 's' : ''}...</div>`;
+                        }
+                        document.getElementById('historyContent').innerHTML = historyHtml;
+                        document.getElementById('mealHistory').style.display = 'block';
+                    } else {
+                        document.getElementById('mealHistory').style.display = 'none';
+                    }
+
+                    document.getElementById('confirmationModal').classList.add('active');
+                } else {
+                    alert('Error checking student status: ' + (data.error || 'Unknown'));
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Failed to check student meal status');
+            });
+    }
+
+    function closeModal() {
+        document.getElementById('confirmationModal').classList.remove('active');
+        selectedStudent = null;
+        document.getElementById('reasonSelect').value = '';
+        document.getElementById('notesTextarea').value = '';
+    }
+
+    function confirmMealEntry() {
+        const reason = document.getElementById('reasonSelect').value;
+        const notes = document.getElementById('notesTextarea').value;
+
+        if (!reason) {
+            alert('Please select a reason for manual entry');
+            return;
+        }
+
+        if (!selectedStudent) {
+            alert('No student selected');
+            return;
+        }
+
+    const confirmBtn = document.querySelector('.btn-confirm');
+    const originalText = confirmBtn.innerHTML;
+    confirmBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Processing...';
+    confirmBtn.disabled = true;
+
+        fetch('/api/manual-meal-entry/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                student_id: selectedStudent.id,
+                meal_type: selectedMeal,
+                reason: reason,
+                notes: notes
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccessNotification(selectedStudent.full_name + ' (' + selectedMeal.replace('_',' ') + ')');
+                    closeModal();
+                    document.getElementById('searchInput').value = '';
+                    document.getElementById('resultsSection').style.display = 'none';
+                } else {
+                    // If server reports already checked in, show friendly message and keep modal open
+                    if (data.error && data.error.toLowerCase().includes('already')) {
+                        document.getElementById('warningBox').classList.add('show');
+                        document.getElementById('warningText').textContent = `This student has already been recorded for ${selectedMeal.replace('_',' ')} today.`;
+                    } else {
+                        alert('Error: ' + (data.error || 'Failed to record meal'));
+                    }
+                    confirmBtn.innerHTML = originalText;
+                    confirmBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+                confirmBtn.innerHTML = originalText;
+                confirmBtn.disabled = false;
+            });
+    }
+
+    function showSuccessNotification(studentName) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+        position: fixed;
+        top: 90px;
+        right: 20px;
+        background: #10b981;
+        color: white;
+        padding: 1.5rem 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+    `;
+        notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <i class="bi bi-check-circle-fill" style="font-size: 2rem;"></i>
+            <div>
+                <div style="font-weight: 600; font-size: 1.1rem;">Success!</div>
+                <div>Meal recorded for ${studentName}</div>
+            </div>
+        </div>
+    `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    function fillSearch(text) {
+        document.getElementById('searchInput').value = text;
+        searchStudents();
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Add animation styles
+    const style = document.createElement('style');
+    style.textContent = `
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+    }
+`;
+    document.head.appendChild(style);
+    // initialize selected meal button visuals
+    document.addEventListener('DOMContentLoaded', function(){ setMeal(selectedMeal); });
+</script>
+{% endblock %}

@@ -22,12 +22,24 @@ urlpatterns = [
     path("records/", views.feeding_records, name="feeding_records"),
     path("register-student/", views.register_student, name="register_student"),
     path("admin-dashboard/", views.admin_dashboard, name="admin_dashboard"),
+    # Manual search/check-in page and API endpoints
+    path("manual-check/", views.manual_check_page, name="manual_check"),
+    path("api/search-students/", views.api_search_students, name="api_search_students"),
+    path(
+        "api/manual-meal-entry/",
+        views.api_manual_meal_entry,
+        name="api_manual_meal_entry",
+    ),
+    path(
+        "api/check-student-meal/",
+        views.api_check_student_meal,
+        name="api_check_student_meal",
+    ),
     path(
         "feeding-records/export/",
         views.export_feeding_records_csv,
         name="export_feeding_records",
     ),
-  
     # ✅ Keep logout path
     path("logout/", auth_views.LogoutView.as_view(next_page="login"), name="logout"),
 ]

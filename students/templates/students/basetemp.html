@@ -28,11 +28,12 @@
 
     <style>
       :root {
-        --primary: #667eea;
-        --secondary: #764ba2;
-        --accent: #4361ee;
+        /* Theme switched to the manual-check green palette */
+        --primary: #10b981; /* main brand green */
+        --secondary: #059669; /* darker accent green */
+        --accent: #059669; /* consistent accent */
         --light: #ffffff;
-        --dark: #2b2d42;
+        --dark: #0f172a; /* dark navy for contrast */
         --success: #10b981;
         --warning: #f59e0b;
         --danger: #ef4444;
@@ -479,6 +480,16 @@
               >
                 <i class="bi bi-printer"></i>
                 <span>Print QR</span>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a
+                class="nav-link {% if request.path == '/manual-check/' %}active{% endif %}"
+                href="{% url 'manual_check' %}"
+              >
+                <i class="bi bi-search"></i>
+                <span>Manual Lookup</span>
               </a>
             </li>
 
