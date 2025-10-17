@@ -28,7 +28,18 @@ Tracker{% endblock %} {% block content %}
     </div>
 
     <form method="post" enctype="multipart/form-data" class="modern-form">
-      {% csrf_token %} {% for field in form %}
+      {% csrf_token %}
+
+      <!-- Feedback messages -->
+      {% if messages %}
+      <div class="message-area">
+        {% for message in messages %}
+        <div class="alert {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% for field in form %}
       <div class="form-group">
         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field }} {% if field.help_text %}
@@ -185,6 +196,29 @@ Tracker{% endblock %} {% block content %}
 
   .btn-primary svg {
     margin-left: 8px;
+  }
+
+  .message-area {
+    margin-bottom: 1rem;
+  }
+
+  .alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .alert.success {
+    background: #ecfdf5;
+    border: 1px solid #10b981;
+    color: #064e3b;
+  }
+
+  .alert.error {
+    background: #fff1f2;
+    border: 1px solid #ef4444;
+    color: #7f1d1d;
   }
 
   @media (max-width: 576px) {

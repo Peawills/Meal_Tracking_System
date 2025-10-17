@@ -3,7 +3,8 @@ import json
 from django.utils import timezone
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, Http404, HttpResponse
-from django.views.decorators.csrf import csrf_exempt
+
+# csrf_exempt was previously imported but is not used; removed to satisfy linter
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .models import Student, FeedingRecord
 from .forms import StudentForm
@@ -93,7 +94,11 @@ def register_student(request):
     if request.method == "POST":
         form = StudentForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            student = form.save()
+            # Inform user that registration succeeded
+            messages.success(
+                request, f"Student '{student.name}' registered successfully."
+            )
             return redirect("register_student")
     else:
         form = StudentForm()
