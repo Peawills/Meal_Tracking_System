@@ -379,12 +379,14 @@
       margin: 0 !important;
     }
     
+    /* For printing, use 3 columns to make cards larger and fit onto A4/Letter more reliably.
+       Fallback to 4 columns on very wide printable areas. */
     .card-wrapper {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 15px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
       padding: 0;
-      margin-top: 20px !important;
+      margin-top: 12px !important;
     }
     
     .student-card {
@@ -407,10 +409,10 @@
     }
 
     .student-photo {
-      width: 85px !important;
-      height: 85px !important;
+      width: 76px !important;
+      height: 76px !important;
       border-width: 2px !important;
-      margin: 0 auto 10px !important;
+      margin: 0 auto 8px !important;
       display: block !important;
     }
 
@@ -422,10 +424,10 @@
     }
 
     .qr-code {
-      width: 115px !important;
-      height: 115px !important;
-      padding: 5px !important;
-      margin: 10px auto !important;
+      width: 100px !important;
+      height: 100px !important;
+      padding: 6px !important;
+      margin: 8px auto !important;
       display: block !important;
     }
 
@@ -451,9 +453,11 @@
       padding: 3px 10px !important;
     }
     
+    /* Use portrait by default for card sheets — many printers handle portrait better.
+       The grid will tile more predictably on portrait A4/Letter when using 3 columns. */
     @page {
       margin: 1cm 0.8cm;
-      size: A4 landscape;
+      size: A4 portrait;
     }
   }
   

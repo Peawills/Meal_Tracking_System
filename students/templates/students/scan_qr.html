@@ -12,6 +12,10 @@
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
     margin-bottom: 2rem;
   }
+  .header-actions { margin-top: 0.75rem; }
+  .select-max { max-width: 250px; }
+  .hidden { display: none !important; }
+  .status-success { color: white; background: linear-gradient(135deg, var(--success) 0%, var(--secondary) 100%); padding: .5rem 1rem; border-radius: 8px; display: inline-block; }
   
   .scanner-header {
     text-align: center;
@@ -158,17 +162,17 @@
     <div class="scanner-header">
       <h2><i class="bi bi-qr-code-scan me-2"></i>Scan Student QR Code</h2>
       <p>Position the QR code within the frame to scan</p>
-      <div style="margin-top:0.75rem;">
-        <a href="{% url 'manual_check' %}" class="btn btn-success btn-sm">
-          <i class="bi bi-search me-1"></i> Manual Lookup
-        </a>
-      </div>
+        <div class="header-actions">
+          <a href="{% url 'manual_check' %}" class="btn btn-success btn-sm" aria-label="Manual Lookup - open manual check page">
+            <i class="bi bi-search me-1"></i> Manual Lookup
+          </a>
+        </div>
     </div>
 
     <!-- Meal Type Selector -->
     <div class="meal-selector">
       <label for="meal-type" class="form-label mb-2">Select Meal Type:</label>
-      <select id="meal-type" class="form-select mx-auto" style="max-width: 250px;">
+      <select id="meal-type" class="form-select mx-auto select-max">
         <option value="breakfast">🍳 Breakfast</option>
         <option value="lunch">🍲 Lunch</option>
         <option value="dinner">🍛 Dinner</option>
@@ -179,7 +183,7 @@
     <!-- Camera Selector -->
     <div class="camera-selector">
       <label for="camera-select" class="form-label mb-0">Camera:</label>
-      <select id="camera-select" class="form-select" style="max-width: 250px;">
+      <select id="camera-select" class="form-select select-max">
         <option value="">Loading cameras...</option>
       </select>
       <button class="btn btn-outline-light btn-sm" id="switch-camera" title="Switch camera">
@@ -201,7 +205,7 @@
 
   <!-- Student Info Card -->
   <div id="student-info-card" class="text-center">
-    <img id="student-photo" src="" alt="Student Photo">
+  <img id="student-photo" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="Student Photo">
   <h4 id="student-name" class="mb-2 text-primary"></h4>
     <p id="student-class" class="text-muted mb-3"></p>
 

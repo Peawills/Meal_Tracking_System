@@ -253,8 +253,32 @@ def feeding_records(request):
         )
         elements.append(Paragraph(" ", styles["Normal"]))
 
-        data = [["Student", "Admission Number", "Class", "Meal", "Date", "Time"]]
+        # Include audit columns: Recorded By, Reason, Notes
+        data = [
+            [
+                "Student",
+                "Admission Number",
+                "Class",
+                "Meal",
+                "Date",
+                "Time",
+                "Recorded By",
+                "Reason",
+                "Notes",
+            ]
+        ]
+
+        # Use Paragraphs for potentially long text (reason/notes) so ReportLab can wrap them
+        styleN = styles["Normal"]
         for record in records:
+            recorded_by = (
+                getattr(record.performed_by, "username", "")
+                if record.performed_by
+                else ""
+            )
+            reason = record.reason or ""
+            notes = record.notes or ""
+
             data.append(
                 [
                     record.student.name,
@@ -263,20 +287,27 @@ def feeding_records(request):
                     record.get_meal_type_display(),
                     record.date.strftime("%Y-%m-%d"),
                     record.time.strftime("%H:%M:%S"),
+                    recorded_by,
+                    Paragraph(reason, styleN),
+                    Paragraph(notes, styleN),
                 ]
             )
 
-        table = Table(data, repeatRows=1)
+        # Create table and style it. Use site green for header (#10b981)
+        table = Table(
+            data, repeatRows=1, colWidths=[90, 70, 60, 60, 60, 50, 70, 140, 180]
+        )
         table.setStyle(
             TableStyle(
                 [
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#667eea")),
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#10b981")),
                     ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("ALIGN", (0, 0), (5, -1), "CENTER"),
+                    ("ALIGN", (6, 0), (-1, -1), "LEFT"),
                     ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                    ("BOTTOMPADDING", (0, 0), (-1, 0), 10),
                     ("BACKGROUND", (0, 1), (-1, -1), colors.whitesmoke),
-                    ("GRID", (0, 0), (-1, -1), 1, colors.grey),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
                 ]
             )
         )
