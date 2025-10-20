@@ -25,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-sv(s4fx!h156&a%z-^#lejf854*2i#o)w=^$)9gw-3i_gijq-4"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
     "meal-tracking-system.onrender.com",
@@ -162,5 +162,39 @@ LOGOUT_REDIRECT_URL = "login"  # where to go after logout
 # ✅ WhiteNoise static files config
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+# Existing trusted origin for Railway production (kept for backward compatibility)
 CSRF_TRUSTED_ORIGINS = ["https://mealtrackingsystem-production.up.railway.app"]
-# CSRF_TRUSTED_ORIGINS = ["https://meal-tracking-system.onrender.com"]
+
+
+# Development settings - Force disable SSL when DEBUG is True
+if DEBUG:
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+
+
+# Security settings for production ONLY
+if not DEBUG:
+    # HTTPS/SSL Settings - Only enable in production
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = "DENY"
+
+    # HSTS Settings
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    # Proxy headers for Railway
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+
+# CSRF Trusted Origins - add your production URL(s) and local dev hosts
+CSRF_TRUSTED_ORIGINS = [
+    "https://mealtrackingsystem-production.up.railway.app",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+]
