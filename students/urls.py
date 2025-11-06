@@ -3,12 +3,9 @@ from . import views
 from django.contrib.auth import views as auth_views
 
 urlpatterns = [
-    #  Use this to make login the first/default page
-    path(
-        "",
-        auth_views.LoginView.as_view(template_name="students/login.html"),
-        name="login",
-    ),
+    # Homepage as the default view
+    path("", views.homepage, name="homepage"),
+    # Login page removed - using the one from accounts app
     path("print-qr-cards/", views.print_qr_cards, name="print_qr_cards"),
     path("scan/", views.scan_page, name="scan_qr"),
     path(
@@ -41,5 +38,9 @@ urlpatterns = [
         name="export_feeding_records",
     ),
     # ✅ Keep logout path
-    path("logout/", auth_views.LogoutView.as_view(next_page="login"), name="logout"),
+    path(
+        "logout/",
+        auth_views.LogoutView.as_view(next_page="/accounts/login/"),
+        name="logout",
+    ),
 ]

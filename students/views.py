@@ -3,12 +3,13 @@ import json
 from django.utils import timezone
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, Http404, HttpResponse
+from django.db.models import Count, Avg, Q
 
 # csrf_exempt was previously imported but is not used; removed to satisfy linter
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .models import Student, FeedingRecord
 from .forms import StudentForm
-from django.db.models import Q
+from django.db.models import Q, Count, Avg
 from datetime import datetime
 from datetime import timedelta
 from django.utils.dateparse import parse_date
@@ -104,6 +105,38 @@ def register_student(request):
         form = StudentForm()
 
     return render(request, "students/register_student.html", {"form": form})
+
+
+@login_required
+def homepage(request):
+    today = timezone.now().date()
+    week_ago = today - timedelta(days=7)
+
+    # Get all necessary stats
+    total_students = Student.objects.count()
+    meals_today = FeedingRecord.objects.filter(date=today).count()
+    weekly_meals = FeedingRecord.objects.filter(date__range=[week_ago, today]).count()
+
+    # Calculate attendance rate (percentage of students who had at least one meal today)
+    students_with_meals = (
+        FeedingRecord.objects.filter(date=today).values("student").distinct().count()
+    )
+    attendance_rate = round(
+        (students_with_meals / total_students * 100) if total_students > 0 else 0
+    )
+
+    # Get recent students for activity feed
+    recent_students = Student.objects.order_by("-id")[:5]
+
+    context = {
+        "total_students": total_students,
+        "meals_today": meals_today,
+        "weekly_meals": weekly_meals,
+        "attendance_rate": attendance_rate,
+        "recent_students": recent_students,
+    }
+
+    return render(request, "students/homepage.html", context)
 
 
 @login_required

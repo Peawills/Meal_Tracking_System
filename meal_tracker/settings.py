@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,15 +24,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-sv(s4fx!h156&a%z-^#lejf854*2i#o)w=^$)9gw-3i_gijq-4"
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True  # Set to True for local development
 
 ALLOWED_HOSTS = [
     "meal-tracking-system.onrender.com",
     "localhost",
+    "127.0.0.1",
     "*",
     "mealtrackingsystem-production.up.railway.app",
 ]  # Change this to your domain or IP address in production
@@ -47,6 +50,7 @@ INSTALLED_APPS = [
     "students",
     "widget_tweaks",
     "accounts",
+    "sslserver",  # For development HTTPS
 ]
 
 MIDDLEWARE = [
@@ -155,15 +159,12 @@ MEDIA_ROOT = BASE_DIR / "media"  # For Django 3.1+ using pathlib
 
 
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "scan_qr"  # where to go after login
+LOGIN_REDIRECT_URL = "homepage"  # Redirect to homepage after login
 LOGOUT_REDIRECT_URL = "login"  # where to go after logout
 
 
 # ✅ WhiteNoise static files config
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
-# Existing trusted origin for Railway production (kept for backward compatibility)
-CSRF_TRUSTED_ORIGINS = ["https://mealtrackingsystem-production.up.railway.app"]
 
 
 # Development settings - Force disable SSL when DEBUG is True
@@ -198,3 +199,30 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8000",
     "http://localhost:8000",
 ]
+
+
+# CACHING
+# Recommended: Use Redis in production for a fast, shared cache across processes.
+# If REDIS_URL is not provided, default to a local Redis URL. For development you can
+# switch to Django's local memory cache (LocMemCache) which is not shared across
+# processes and therefore not suitable for multi-process production.
+REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/1")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            # 'PASSWORD': os.getenv('REDIS_PASSWORD', None),
+        },
+    }
+}
+
+# Example local-memory fallback for purely local development/testing:
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+#         'LOCATION': 'unique-snowflake',
+#     }
+# }

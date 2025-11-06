@@ -777,7 +777,7 @@
         document.getElementById('noResults').style.display = 'none';
 
         searchTimeout = setTimeout(() => {
-            fetch(`/api/search-students/?q=${encodeURIComponent(searchTerm)}&meal_type=${encodeURIComponent(selectedMeal)}`)
+            fetch(`/dashboard/api/search-students/?q=${encodeURIComponent(searchTerm)}&meal_type=${encodeURIComponent(selectedMeal)}`)
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('loadingState').style.display = 'none';
@@ -874,7 +874,7 @@
         document.getElementById('modalCardStatus').textContent = student.card_status;
 
         // Fetch check for this student and selected meal
-        fetch(`/api/check-student-meal/?student_id=${student.id}&meal_type=${encodeURIComponent(selectedMeal)}`)
+        fetch(`/dashboard/api/check-student-meal/?student_id=${student.id}&meal_type=${encodeURIComponent(selectedMeal)}`)
             .then(r => r.json())
             .then(data => {
                         if (data.success) {
@@ -950,7 +950,7 @@
     // Clear previous feedback
     showModalFeedback('', 'clear');
 
-    fetch('/api/manual-meal-entry/', {
+    fetch('/dashboard/api/manual-meal-entry/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
