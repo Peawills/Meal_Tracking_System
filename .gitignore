@@ -24,7 +24,6 @@ __pycache__/
 # Virtual Environment
 env/
 venv/
-ENV/
 .venv
 
 # SSL/TLS Certificates
